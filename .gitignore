@@ -1,0 +1,14 @@
+.idea
+*.iml
+out
+gen
+vendor/*
+
+# Composer
+composer.phar
+
+# PHPUnit
+/phpunit
+/.phpunit/
+/phpunit.xml
+

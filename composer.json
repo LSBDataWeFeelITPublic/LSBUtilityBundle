@@ -1,0 +1,31 @@
+{
+    "name": "lsb/utility-bundle",
+    "type": "symfony-bundle",
+    "description": "Utility bundle",
+    "keywords": [
+        "utility"
+    ],
+    "homepage": "https://lsb.pl",
+    "authors": [
+        {
+            "name": "Piotr Bazylewicz",
+            "email": "piotr.bazylewicz@lsb.com.pl"
+        }
+    ],
+    "require": {
+        "php": "^7.4 | ^8.0",
+        "symfony/framework-bundle": "^4.2 | ^5.0",
+        "symfony/validator": "^4.2 | ^5.0",
+        "stof/doctrine-extensions-bundle": "^1.3",
+        "ramsey/uuid-doctrine": "^1.5",
+        "symfony/uid": "^5.2",
+        "knplabs/knp-paginator-bundle": "^5.0@dev"
+    },
+    "require-dev": {
+    },
+    "autoload": {
+        "psr-4": {
+            "LSB\\UtilityBundle\\": ""
+        }
+    }
+}
