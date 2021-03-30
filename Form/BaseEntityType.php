@@ -13,6 +13,8 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
  */
 abstract class BaseEntityType extends AbstractType
 {
+    const DEFAULT_TRANSLATION_DOMAIN = 'messages';
+
     /**
      * @var string
      */
@@ -22,17 +24,6 @@ abstract class BaseEntityType extends AbstractType
      * @var string
      */
     protected $translationDomain;
-
-    /**
-     * BaseEntityType constructor.
-     * @param string $className
-     * @param string $translationDomain
-     */
-    public function __construct(string $className, string $translationDomain)
-    {
-        $this->className = $className;
-        $this->translationDomain = $translationDomain;
-    }
 
     /**
      * @param string $className
@@ -55,6 +46,10 @@ abstract class BaseEntityType extends AbstractType
      */
     public function configureOptions(OptionsResolver $resolver)
     {
+        if (!$this->className) {
+            throw new \Exception('FQCN is required.');
+        }
+
         $resolver->setDefaults(
             [
                 'translation_domain' => $this->translationDomain,

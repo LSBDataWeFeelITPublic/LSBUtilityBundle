@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace LSB\UtilityBundle\Manager;
 
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\Persistence\ObjectRepository;
 
 /**
  * Class ObjectManager
@@ -51,5 +52,15 @@ class ObjectManager implements ObjectManagerInterface
     public function flush(): void
     {
         $this->em->flush();
+    }
+
+
+    /**
+     * @param string $fqcn
+     * @return ObjectRepository|null
+     */
+    public function getRepository(string $fqcn): ?ObjectRepository
+    {
+        return $this->em->getRepository($fqcn);
     }
 }

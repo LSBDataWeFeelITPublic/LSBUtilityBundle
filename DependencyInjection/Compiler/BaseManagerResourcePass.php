@@ -32,6 +32,7 @@ abstract class BaseManagerResourcePass implements CompilerPassInterface
      * @param string $formArg
      * @param string $translationDomainArg
      * @param string $classNameArg
+     * @param bool $useMethodCalls
      * @throws \ReflectionException
      */
     protected function processResources(
@@ -42,7 +43,7 @@ abstract class BaseManagerResourcePass implements CompilerPassInterface
         string $formArg = '$form',
         string $translationDomainArg = '$translationDomain',
         string $classNameArg = '$className',
-        bool $useMethodCalls = false
+        bool $useMethodCalls = true
     ): void {
 
         $resourcesParameterName = $prefix . '.' . BE::CONFIG_KEY_CONFIG . '.' . BE::CONFIG_KEY_RESOURCES;
@@ -95,12 +96,36 @@ abstract class BaseManagerResourcePass implements CompilerPassInterface
             if ($formDef) {
                 $managerDef->setArgument($formArg, $formDef);
                 $this->setFormArguments($formDef, $useMethodCalls, $classNameArg, $translationDomainArg, $entityClass, $translationDomain);
+
+                $parentsClasses = class_parents($formClass);
+
+                foreach ($parentsClasses as $parentsClass) {
+                    $parentsClassReflection = new \ReflectionClass($parentsClass);
+                    if ($parentsClassReflection->isAbstract()) {
+                        continue;
+                    }
+
+                    $defaultFormDef = $container->getDefinition($parentsClass);
+                    $this->setFormArguments($defaultFormDef, $useMethodCalls, $classNameArg, $translationDomainArg, $entityClass, $translationDomain);
+                }
             }
 
             $translationFormDef = $translationFormClass && $container->hasDefinition($translationFormClass) ? $container->findDefinition($translationFormClass) : null;
 
             if ($translationFormClass) {
                 $this->setFormArguments($translationFormDef, $useMethodCalls, $classNameArg, $translationDomainArg, $entityClass, $translationDomain);
+
+                $parentsClasses = class_parents($translationFormClass);
+
+                foreach ($parentsClasses as $parentsClass) {
+                    $parentsClassReflection = new \ReflectionClass($parentsClass);
+                    if ($parentsClassReflection->isAbstract()) {
+                        continue;
+                    }
+
+                    $defaultTranslationFormDef = $container->getDefinition($parentsClass);
+                    $this->setFormArguments($defaultTranslationFormDef, $useMethodCalls, $classNameArg, $translationDomainArg, $entityClass, $translationDomain);
+                }
             }
 
             $parentsClasses = class_parents($managerClass);
@@ -131,9 +156,12 @@ abstract class BaseManagerResourcePass implements CompilerPassInterface
     }
 
     /**
-     * @param Definition $managerDef
      * @param Definition $formDef
      * @param bool $useMethodCalls
+     * @param string $classNameArg
+     * @param string $translationDomainArg
+     * @param string $entityClass
+     * @param string $translationDomain
      */
     protected function setFormArguments(
         Definition $formDef,

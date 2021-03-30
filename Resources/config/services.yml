@@ -8,4 +8,7 @@ services:
 
     LSB\UtilityBundle\Manager\ObjectManagerInterface: '@LSB\UtilityBundle\Manager\ObjectManager'
 
-    LSB\UtilityBundle\Paginator\PaginatorInterface: '@knp_paginator'
+    LSB\UtilityBundle\Form\EntityLazyType:
+        arguments: ['@LSB\UtilityBundle\Manager\ObjectManager']
+        tags:
+            - { name: form.type }

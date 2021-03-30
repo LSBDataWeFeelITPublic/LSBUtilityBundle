@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace LSB\UtilityBundle\Manager;
 
+use Doctrine\Persistence\ObjectRepository;
 use LSB\UtilityBundle\Repository\RepositoryInterface;
 
 /**
@@ -29,4 +30,12 @@ interface ObjectManagerInterface
      * Flush
      */
     public function flush(): void;
+
+    /**
+     * Get repository by FQCN
+     *
+     * @param string $fqcn
+     * @return ObjectRepository|null
+     */
+    public function getRepository(string $fqcn): ?ObjectRepository;
 }
