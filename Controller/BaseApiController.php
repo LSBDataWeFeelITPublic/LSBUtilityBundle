@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace LSB\UtilityBundle\Controller;
 
+use Exception;
 use FOS\RestBundle\Controller\AbstractFOSRestController;
 use Knp\Component\Pager\Pagination\PaginationInterface;
 use Knp\Component\Pager\PaginatorInterface;
@@ -77,7 +78,7 @@ abstract class BaseApiController extends AbstractFOSRestController
      * @param ManagerInterface $manager
      * @param object|null $object
      * @return FormInterface
-     * @throws \Exception
+     * @throws Exception
      */
     protected function createEntityForm(ManagerInterface $manager, ?object $object = null): FormInterface
     {
@@ -86,7 +87,7 @@ abstract class BaseApiController extends AbstractFOSRestController
         if (!$object) {
             $object = $manager->getFactory()->createNew();
         } elseif (!$object instanceof $requiredFqcn) {
-            throw new \Exception("Object is no instance of {$requiredFqcn}");
+            throw new Exception("Object is no instance of {$requiredFqcn}");
         }
 
         return $this->createForm(get_class($manager->getForm()), $object);
@@ -96,10 +97,10 @@ abstract class BaseApiController extends AbstractFOSRestController
      * @param Request $request
      * @param ManagerInterface $manager
      * @param object|null $object
-     * @return FormInterface|null
-     * @throws \Exception
+     * @return object|FormInterface|null
+     * @throws Exception
      */
-    protected function handleEntityRequest(Request $request, ManagerInterface $manager, ?object $object = null): ?FormInterface
+    protected function handleEntityRequest(Request $request, ManagerInterface $manager, ?object $object = null)
     {
         $form = $this->createEntityForm($manager, $object);
         $this->decodeSubmitFormRequest($request, $form);
@@ -108,10 +109,11 @@ abstract class BaseApiController extends AbstractFOSRestController
     }
 
     /**
+     * @param ManagerInterface $manager
      * @param FormInterface $form
-     * @return FormInterface|null
+     * @return FormInterface|object|null
      */
-    protected function storeEntityData(ManagerInterface $manager, FormInterface $form): ?FormInterface
+    protected function storeEntityData(ManagerInterface $manager, FormInterface $form)
     {
         if (!$form->isSubmitted()) {
             $this->createBadRequestHttpException("Missing entity form");
@@ -119,7 +121,7 @@ abstract class BaseApiController extends AbstractFOSRestController
 
         if ($form->isValid()) {
             $manager->doPersist($form->getData());
-            return null;
+            return $form->getData();
         }
 
         return $form;
@@ -146,10 +148,10 @@ abstract class BaseApiController extends AbstractFOSRestController
     }
 
     /**
-     * @param \Symfony\Component\Form\Form $form
+     * @param Form $form
      * @return array
      */
-    protected function getErrorMessages(\Symfony\Component\Form\Form $form):array
+    protected function getErrorMessages(Form $form):array
     {
         $errors = array();
 
@@ -180,6 +182,7 @@ abstract class BaseApiController extends AbstractFOSRestController
         bool $serializeNull = true,
         bool $noIndex = true
     ): Response {
+
         $view = (new View)
             ->setStatusCode($responseStatus)
             ->setData($data);
@@ -207,6 +210,25 @@ abstract class BaseApiController extends AbstractFOSRestController
         }
 
         return $this->handleView($view);
+    }
+
+
+    /**
+     * @param $data
+     * @param string $route
+     * @param array $groups
+     * @return Response
+     * @throws Exception
+     */
+    public function serializePostActionResponse($data, string $route, array $groups = []): Response
+    {
+        if ($data instanceof FormInterface) {
+            return $this->serializeResponse($data, Response::HTTP_OK, $groups);
+        } elseif ($data && $data->getUuid()) {
+            return $this->serializeResponse(null, Response::HTTP_NO_CONTENT, $groups, $this->generateUrl($route, ['uuid' => $data->getUuid()]));
+        }
+
+        throw new Exception('Not allowed to serialize.');
     }
 
     /**
