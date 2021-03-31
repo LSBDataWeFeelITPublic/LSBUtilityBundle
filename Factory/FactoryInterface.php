@@ -25,5 +25,5 @@ interface FactoryInterface
      *
      * @return string
      */
-    public function getClassName();
+    public function getClassName(): string;
 }

@@ -41,7 +41,7 @@ abstract class BaseManager implements ManagerInterface
      * @param ObjectManagerInterface $objectManager
      * @param FactoryInterface $factory
      * @param RepositoryInterface|null $repository
-     * @param AbstractType|null $form
+     * @param BaseEntityType|null $form
      */
     public function __construct(
         ObjectManagerInterface $objectManager,
@@ -73,6 +73,7 @@ abstract class BaseManager implements ManagerInterface
 
     /**
      * @return RepositoryInterface
+     * @throws \Exception
      */
     public function getRepository(): RepositoryInterface
     {

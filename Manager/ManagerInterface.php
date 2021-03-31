@@ -6,7 +6,6 @@ namespace LSB\UtilityBundle\Manager;
 use LSB\UtilityBundle\Factory\FactoryInterface;
 use LSB\UtilityBundle\Form\BaseEntityType;
 use LSB\UtilityBundle\Repository\RepositoryInterface;
-use Symfony\Component\Form\AbstractType;
 
 /**
  * Interface ManagerInterface
