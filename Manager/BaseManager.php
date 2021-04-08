@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace LSB\UtilityBundle\Manager;
 
+use Knp\DoctrineBehaviors\Contract\Entity\TranslatableInterface;
 use LSB\UtilityBundle\Factory\FactoryInterface;
 use LSB\UtilityBundle\Form\BaseEntityType;
 use LSB\UtilityBundle\Repository\RepositoryInterface;
@@ -105,6 +106,11 @@ abstract class BaseManager implements ManagerInterface
      */
     public function persist(object $object)
     {
+
+        if ($object instanceof TranslatableInterface) {
+            $object->mergeNewTranslations();
+        }
+
         $this->getObjectManager()->persist($object);
     }
 
