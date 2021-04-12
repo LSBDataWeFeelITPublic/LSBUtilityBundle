@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace LSB\UtilityBundle\Form;
 
+use LSB\UtilityBundle\Manager\ManagerInterface;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
@@ -16,12 +17,12 @@ abstract class BaseEntityType extends AbstractType
     const DEFAULT_TRANSLATION_DOMAIN = 'messages';
 
     /**
-     * @var string
+     * @var string|null
      */
     protected $className;
 
     /**
-     * @var string
+     * @var string|null
      */
     protected $translationDomain;
 
