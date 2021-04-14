@@ -38,6 +38,11 @@ abstract class BaseManager implements ManagerInterface
     protected $form;
 
     /**
+     * @var array
+     */
+    protected array $configuration = [];
+
+    /**
      * BaseManager constructor.
      * @param ObjectManagerInterface $objectManager
      * @param FactoryInterface $factory
@@ -48,12 +53,14 @@ abstract class BaseManager implements ManagerInterface
         ObjectManagerInterface $objectManager,
         FactoryInterface $factory,
         ?RepositoryInterface $repository = null,
-        ?BaseEntityType $form = null
+        ?BaseEntityType $form = null,
+        array $configuration = []
     ) {
         $this->objectManager = $objectManager;
         $this->factory = $factory;
         $this->repository = $repository;
         $this->form = $form;
+        $this->configuration = $configuration;
     }
 
     /**
@@ -135,7 +142,6 @@ abstract class BaseManager implements ManagerInterface
      */
     public function doPersist(object $object, bool $throwException = true): bool
     {
-
         try {
             $this->persist($object);
             $this->flush();
@@ -167,5 +173,21 @@ abstract class BaseManager implements ManagerInterface
         return false;
     }
 
+    /**
+     * @return array
+     */
+    public function getConfiguration(): array
+    {
+        return $this->configuration;
+    }
 
+    /**
+     * @param array $configuration
+     * @return $this
+     */
+    public function setConfiguration(array $configuration): self
+    {
+        $this->configuration = $configuration;
+        return $this;
+    }
 }

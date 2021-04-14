@@ -53,6 +53,8 @@ abstract class BaseManagerResourcePass implements CompilerPassInterface
 //            throw new \InvalidArgumentException("Missing $prefix resource parameter: $resourcesParameterName");
             return;
         }
+        $configParameterName = $prefix.BE::DOT.BE::CONFIG_KEY_CONFIG;
+        $config = $container->getParameter($configParameterName);
 
         $resources = $container->getParameter($resourcesParameterName);
         $translationDomain = $container->getParameter($translationDomainParameterName);
@@ -74,7 +76,8 @@ abstract class BaseManagerResourcePass implements CompilerPassInterface
             }
 
             $managerDef = $container->findDefinition($managerClass);
-
+            $managerDef->addMethodCall('setConfiguration', [$config]);
+            
             //Factory definition
             $factoryDef = $factoryClass && $container->hasDefinition($factoryClass) ? $container->findDefinition($factoryClass) : null;
 
@@ -150,6 +153,7 @@ abstract class BaseManagerResourcePass implements CompilerPassInterface
                     }
 
                     $defaultManagerDef->setArgument($formArg, $formDef ?? null);
+                    $defaultManagerDef->addMethodCall('setConfiguration', [$config]);
                 }
             }
         }

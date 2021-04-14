@@ -69,4 +69,15 @@ interface ManagerInterface
      */
     public function createNew(): object;
 
+    /**
+     * @return array
+     */
+    public function getConfiguration(): array;
+
+    /**
+     * @param array $configuration
+     * @return $this
+     */
+    public function setConfiguration(array $configuration): self;
+
 }

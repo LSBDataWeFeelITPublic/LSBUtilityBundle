@@ -17,6 +17,7 @@ use Symfony\Component\DependencyInjection\Loader;
 abstract class BaseExtension extends Extension
 {
     const CONFIG_PREFIX = 'lsb_bundle_def';
+    const DOT = '.';
 
     const CONFIG_KEY_CONFIG = 'config';
     const CONFIG_KEY_CLASSES = 'classes';
@@ -91,9 +92,11 @@ abstract class BaseExtension extends Extension
             return;
         }
 
-        $resourcesParameterName = $prefix.'.'.static::CONFIG_KEY_CONFIG.'.'.static::CONFIG_KEY_RESOURCES;
-        $translationDomainParameterName = $prefix.'.'.static::CONFIG_KEY_CONFIG.'.'.static::CONFIG_KEY_TRANSLATION_DOMAIN;
+        $configParameterName = $prefix.static::DOT.static::CONFIG_KEY_CONFIG;
+        $resourcesParameterName = $prefix.static::DOT.static::CONFIG_KEY_CONFIG.static::DOT.static::CONFIG_KEY_RESOURCES;
+        $translationDomainParameterName = $prefix.static::DOT.static::CONFIG_KEY_CONFIG.static::DOT.static::CONFIG_KEY_TRANSLATION_DOMAIN;
 
+        $container->setParameter($configParameterName, $config ?? []);
         $container->setParameter($resourcesParameterName, $config[self::CONFIG_KEY_RESOURCES] ?? []);
         $container->setParameter($translationDomainParameterName, $config[self::CONFIG_KEY_TRANSLATION_DOMAIN] ?? null);
 
