@@ -7,6 +7,8 @@ use Knp\DoctrineBehaviors\Contract\Entity\TranslatableInterface;
 use LSB\UtilityBundle\Factory\FactoryInterface;
 use LSB\UtilityBundle\Form\BaseEntityType;
 use LSB\UtilityBundle\Repository\RepositoryInterface;
+use LSB\UtilityBundle\DependencyInjection\BaseExtension as BE;
+use LSB\UtilityBundle\Security\VoterSubjectInterface;
 use Symfony\Component\Form\AbstractType;
 use LSB\UtilityBundle\Exception\ObjectManager\DoRemoveException;
 use LSB\UtilityBundle\Exception\ObjectManager\DoPersistException;
@@ -38,9 +40,19 @@ abstract class BaseManager implements ManagerInterface
     protected $form;
 
     /**
+     * @var
+     */
+    protected $voterSubjectFqcn;
+
+    /**
      * @var array
      */
-    protected array $configuration = [];
+    protected array $bundleConfiguration = [];
+
+    /**
+     * @var array
+     */
+    protected array $resourceConfiguration = [];
 
     /**
      * BaseManager constructor.
@@ -54,13 +66,15 @@ abstract class BaseManager implements ManagerInterface
         FactoryInterface $factory,
         ?RepositoryInterface $repository = null,
         ?BaseEntityType $form = null,
-        array $configuration = []
+        array $configuration = [],
+        array $resourceConfiguration = []
     ) {
         $this->objectManager = $objectManager;
         $this->factory = $factory;
         $this->repository = $repository;
         $this->form = $form;
-        $this->configuration = $configuration;
+        $this->bundleConfiguration = $configuration;
+        $this->resourceConfiguration = $resourceConfiguration;
     }
 
     /**
@@ -175,19 +189,97 @@ abstract class BaseManager implements ManagerInterface
 
     /**
      * @return array
+     * @deprecated Use getBundleConfiguration()
      */
     public function getConfiguration(): array
     {
-        return $this->configuration;
+        return $this->getBundleConfiguration();
     }
 
     /**
-     * @param array $configuration
+     * @return array
+     */
+    public function getBundleConfiguration(): array
+    {
+        return $this->bundleConfiguration;
+    }
+
+    /**
+     * @param array $bundleConfiguration
      * @return $this
      */
-    public function setConfiguration(array $configuration): self
+    public function setBundleConfiguration(array $bundleConfiguration): self
     {
-        $this->configuration = $configuration;
+        $this->bundleConfiguration = $bundleConfiguration;
         return $this;
     }
+
+    /**
+     * @param array $resourceConfiguration
+     * @return $this
+     */
+    public function setResourceConfiguration(array $resourceConfiguration): self
+    {
+        $this->resourceConfiguration = $resourceConfiguration;
+        return $this;
+    }
+
+    /**
+     * @return array
+     */
+    public function getResourceConfiguration(): array
+    {
+        return $this->resourceConfiguration;
+    }
+
+    /**
+     * @return string
+     * @throws \Exception
+     */
+    public function getResourceEntityClass(): string
+    {
+        if (isset($this->resourceConfiguration[BE::CONFIG_KEY_CLASSES][BE::CONFIG_KEY_ENTITY])) {
+            return (string) $this->resourceConfiguration[BE::CONFIG_KEY_CLASSES][BE::CONFIG_KEY_ENTITY];
+        }
+
+        throw new \Exception('Resource: Entity FQCN is not set.');
+    }
+
+    /**
+     * @return string
+     * @throws \Exception
+     */
+    public function getResourceVoterSubjectClass(): string
+    {
+        if (isset($this->resourceConfiguration[BE::CONFIG_KEY_CLASSES][BE::CONFIG_KEY_VOTER_SUBJECT])) {
+            return (string) $this->resourceConfiguration[BE::CONFIG_KEY_CLASSES][BE::CONFIG_KEY_VOTER_SUBJECT];
+        }
+
+        throw new \Exception('Resource: Voter Subject FQCN is not set.');
+    }
+
+    /**
+     * @return string
+     * @throws \Exception
+     */
+    public function getResourceFormClass(): string
+    {
+        if (isset($this->resourceConfiguration[BE::CONFIG_KEY_CLASSES][BE::CONFIG_KEY_FORM])) {
+            return (string) $this->resourceConfiguration[BE::CONFIG_KEY_CLASSES][BE::CONFIG_KEY_FORM];
+        }
+
+        throw new \Exception('Resource: Voter Subject FQCN is not set.');
+    }
+
+    /**
+     * @param mixed ...$args
+     * @return VoterSubjectInterface
+     * @throws \Exception
+     */
+    public function getVoterSubject(...$args): VoterSubjectInterface
+    {
+        $voterSubjectClass = $this->getResourceVoterSubjectClass();
+        return new $voterSubjectClass(...$args);
+    }
+
 }

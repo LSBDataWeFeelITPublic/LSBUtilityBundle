@@ -15,6 +15,4 @@ interface ObjectVoterInterface extends VoterInterface
      * @return string[]
      */
     public function getSupportedActions(): array;
-
-
 }

@@ -9,7 +9,7 @@ use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepositoryInterface;
  * Interface RepositoryInterface
  * @package LSB\UtilityBundle\Factory
  */
-interface RepositoryInterface extends ServiceEntityRepositoryInterface
+interface RepositoryInterface extends ServiceEntityRepositoryInterface, PaginationInterface
 {
 
 }

@@ -70,13 +70,13 @@ abstract class BaseManagerResourcePass implements CompilerPassInterface
             $repositoryClass = $data[BE::CONFIG_KEY_CLASSES][BE::CONFIG_KEY_REPOSITORY] ?? null;
             $entityClass = $data[BE::CONFIG_KEY_CLASSES][BE::CONFIG_KEY_ENTITY] ?? null;
 
-
             if (!$managerClass || !$container->has($managerClass)) {
                 throw new \Exception('Missing service manager definition for resource: ' . $resource);
             }
 
             $managerDef = $container->findDefinition($managerClass);
-            $managerDef->addMethodCall('setConfiguration', [$config]);
+            $managerDef->addMethodCall('setBundleConfiguration', [$config]);
+            $managerDef->addMethodCall('setResourceConfiguration', [$data]);
             
             //Factory definition
             $factoryDef = $factoryClass && $container->hasDefinition($factoryClass) ? $container->findDefinition($factoryClass) : null;
@@ -153,7 +153,8 @@ abstract class BaseManagerResourcePass implements CompilerPassInterface
                     }
 
                     $defaultManagerDef->setArgument($formArg, $formDef ?? null);
-                    $defaultManagerDef->addMethodCall('setConfiguration', [$config]);
+                    $defaultManagerDef->addMethodCall('setBundleConfiguration', [$config]);
+                    $defaultManagerDef->addMethodCall('setResourceConfiguration', [$data]);
                 }
             }
         }

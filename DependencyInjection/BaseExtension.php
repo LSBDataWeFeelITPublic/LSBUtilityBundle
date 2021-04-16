@@ -26,6 +26,7 @@ abstract class BaseExtension extends Extension
     const CONFIG_KEY_FACTORY = 'factory';
     const CONFIG_KEY_MANAGER = 'manager';
     const CONFIG_KEY_FORM = 'form';
+    const CONFIG_KEY_VOTER_SUBJECT = 'voter_subject';
     const CONFIG_KEY_RESOURCES = 'resources';
     const CONFIG_KEY_TRANSLATION_DOMAIN = 'translation_domain';
     const CONFIG_KEY_TRANSLATION = 'translation';
