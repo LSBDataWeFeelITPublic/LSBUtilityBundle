@@ -113,4 +113,13 @@ interface ManagerInterface
      */
     public function getVoterSubject(...$args): VoterSubjectInterface;
 
+    /**
+     * @return string|null
+     */
+    public function getAppCode(): ?string;
+
+    /**
+     * @param string|null $appCode
+     */
+    public function setAppCode(?string $appCode): void;
 }

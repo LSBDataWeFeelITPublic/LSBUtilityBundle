@@ -3,12 +3,16 @@ declare(strict_types=1);
 
 namespace LSB\UtilityBundle\Factory;
 
+use LSB\UtilityBundle\Application\AppCodeTrait;
+
 /**
  * Class Factory
  * @package LSB\UtilityBundle\Factory
  */
 abstract class BaseFactory implements FactoryInterface
 {
+    use AppCodeTrait;
+
     /**
      * @var string FQCN
      */

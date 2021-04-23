@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace LSB\UtilityBundle\Manager;
 
 use Knp\DoctrineBehaviors\Contract\Entity\TranslatableInterface;
+use LSB\UtilityBundle\Application\AppCodeTrait;
 use LSB\UtilityBundle\Factory\FactoryInterface;
 use LSB\UtilityBundle\Form\BaseEntityType;
 use LSB\UtilityBundle\Repository\RepositoryInterface;
@@ -19,6 +20,8 @@ use LSB\UtilityBundle\Exception\ObjectManager\DoPersistException;
  */
 abstract class BaseManager implements ManagerInterface
 {
+    use AppCodeTrait;
+
     /**
      * @var ObjectManagerInterface
      */
@@ -65,16 +68,12 @@ abstract class BaseManager implements ManagerInterface
         ObjectManagerInterface $objectManager,
         FactoryInterface $factory,
         ?RepositoryInterface $repository = null,
-        ?BaseEntityType $form = null,
-        array $configuration = [],
-        array $resourceConfiguration = []
+        ?BaseEntityType $form = null
     ) {
         $this->objectManager = $objectManager;
         $this->factory = $factory;
         $this->repository = $repository;
         $this->form = $form;
-        $this->bundleConfiguration = $configuration;
-        $this->resourceConfiguration = $resourceConfiguration;
     }
 
     /**
@@ -251,8 +250,12 @@ abstract class BaseManager implements ManagerInterface
      */
     public function getResourceVoterSubjectClass(): string
     {
-        if (isset($this->resourceConfiguration[BE::CONFIG_KEY_CLASSES][BE::CONFIG_KEY_VOTER_SUBJECT])) {
-            return (string) $this->resourceConfiguration[BE::CONFIG_KEY_CLASSES][BE::CONFIG_KEY_VOTER_SUBJECT];
+        if ($this->getAppCode()
+            && isset($this->resourceConfiguration[BE::CONFIG_KEY_CONTEXT][$this->getAppCode()][BE::CONFIG_KEY_CLASSES][BE::CONFIG_KEY_VOTER_SUBJECT])
+            && $this->resourceConfiguration[BE::CONFIG_KEY_CONTEXT][$this->getAppCode()][BE::CONFIG_KEY_CLASSES][BE::CONFIG_KEY_VOTER_SUBJECT]) {
+            return (string) $this->resourceConfiguration[BE::CONFIG_KEY_CONTEXT][$this->getAppCode()][BE::CONFIG_KEY_CLASSES][BE::CONFIG_KEY_VOTER_SUBJECT];
+        } elseif (isset($this->resourceConfiguration[BE::CONFIG_KEY_CLASSES][BE::CONFIG_KEY_VOTER_SUBJECT]) && $this->resourceConfiguration[BE::CONFIG_KEY_CLASSES][BE::CONFIG_KEY_VOTER_SUBJECT]) {
+            return (string) ($this->resourceConfiguration[BE::CONFIG_KEY_CLASSES][BE::CONFIG_KEY_VOTER_SUBJECT]);
         }
 
         throw new \Exception('Resource: Voter Subject FQCN is not set.');
@@ -282,4 +285,19 @@ abstract class BaseManager implements ManagerInterface
         return new $voterSubjectClass(...$args);
     }
 
+    /**
+     * @return string|null
+     */
+    public function getAppCode(): ?string
+    {
+        return $this->appCode;
+    }
+
+    /**
+     * @param string|null $appCode
+     */
+    public function setAppCode(?string $appCode): void
+    {
+        $this->appCode = $appCode;
+    }
 }

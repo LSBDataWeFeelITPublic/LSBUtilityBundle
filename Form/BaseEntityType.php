@@ -3,9 +3,8 @@ declare(strict_types=1);
 
 namespace LSB\UtilityBundle\Form;
 
-use LSB\UtilityBundle\Manager\ManagerInterface;
+use LSB\UtilityBundle\Application\AppCodeTrait;
 use Symfony\Component\Form\AbstractType;
-use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
 /**
@@ -14,6 +13,8 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
  */
 abstract class BaseEntityType extends AbstractType
 {
+    use AppCodeTrait;
+
     const DEFAULT_TRANSLATION_DOMAIN = 'messages';
 
     /**
@@ -48,7 +49,7 @@ abstract class BaseEntityType extends AbstractType
     public function configureOptions(OptionsResolver $resolver)
     {
         if (!$this->className) {
-            throw new \Exception('FQCN is required.');
+            //throw new \Exception('FQCN is required.');
         }
 
         $resolver->setDefaults(

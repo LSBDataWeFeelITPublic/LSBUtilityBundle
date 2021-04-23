@@ -15,6 +15,7 @@ interface PaginationInterface
     const DEFAULT_ALIAS = 'e';
 
     /**
+     * @param string $alias
      * @return QueryBuilder
      */
     public function getPaginationQueryBuilder(string $alias = self::DEFAULT_ALIAS): QueryBuilder;

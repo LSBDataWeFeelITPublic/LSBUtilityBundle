@@ -32,6 +32,7 @@ abstract class BaseExtension extends Extension
     const CONFIG_KEY_TRANSLATION = 'translation';
     const CONFIG_KEY_REPOSITORY = 'repository';
     const CONFIG_KEY_CLASS = 'class';
+    const CONFIG_KEY_CONTEXT = 'context';
 
     const FILE_FACTORIES = 'factories.yml';
     const FILE_MANAGERS = 'managers.yml';

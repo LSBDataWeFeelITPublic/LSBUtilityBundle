@@ -90,7 +90,7 @@ abstract class BaseCRUDApiController extends BaseApiController
     {
         $object = $this->getObject($uuid, true);
 
-        $this->denyAccessUnlessGranted(BaseObjectVoter::ACTION_GET, $this->manager->getVoterSubject($object));
+        $this->denyAccessUnlessGranted(BaseObjectVoter::ACTION_GET, $this->manager->getVoterSubject($object, $this->getAppCode()));
         return $this->serializeResponse($object);
     }
 
@@ -101,9 +101,9 @@ abstract class BaseCRUDApiController extends BaseApiController
      */
     public function cgetAction(PaginatorInterface $paginator, Request $request): Response
     {
-        $this->denyAccessUnlessGranted(BaseObjectVoter::ACTION_CGET, $this->manager->getVoterSubject());
+        $this->denyAccessUnlessGranted(BaseObjectVoter::ACTION_CGET, $this->manager->getVoterSubject(null, $this->getAppCode()));
         $result = $this->paginate($paginator, $this->manager->getRepository(), $request);
-        $this->checkCollection($result, BaseObjectVoter::ACTION_GET);
+        $this->checkCollection($result, BaseObjectVoter::ACTION_GET, $this->manager->getResourceVoterSubjectClass());
         return $this->serializeResponse($result);
     }
 
@@ -114,7 +114,7 @@ abstract class BaseCRUDApiController extends BaseApiController
      */
     public function postAction(Request $request): Response
     {
-        $this->denyAccessUnlessGranted(BaseObjectVoter::ACTION_POST, $this->manager->getVoterSubject());
+        $this->denyAccessUnlessGranted(BaseObjectVoter::ACTION_POST, $this->manager->getVoterSubject(null, $this->getAppCode()));
         $data = $this->handleEntityRequest($request, $this->manager);
         return $this->serializePostActionResponse($data, $this->generateRoutingGet());
     }
@@ -129,7 +129,7 @@ abstract class BaseCRUDApiController extends BaseApiController
     {
         $object = $this->getObject($uuid, false);
 
-        $this->denyAccessUnlessGranted(AppProductVoter::ACTION_POST, $this->manager->getVoterSubject($object));
+        $this->denyAccessUnlessGranted(AppProductVoter::ACTION_POST, $this->manager->getVoterSubject($object, $this->getAppCode()));
         return $this->serializeResponse($this->handleEntityRequest($request, $this->manager, $object), Response::HTTP_NO_CONTENT);
     }
 
@@ -143,7 +143,7 @@ abstract class BaseCRUDApiController extends BaseApiController
     {
         $object = $this->getObject($uuid, true);
 
-        $this->denyAccessUnlessGranted(AppProductVoter::ACTION_PATCH, $this->manager->getVoterSubject($object));
+        $this->denyAccessUnlessGranted(AppProductVoter::ACTION_PATCH, $this->manager->getVoterSubject($object, $this->getAppCode()));
         return $this->serializeResponse($this->handleEntityRequest($request, $this->manager, $object), Response::HTTP_NO_CONTENT);
     }
 
@@ -153,7 +153,7 @@ abstract class BaseCRUDApiController extends BaseApiController
     public function deleteAction(string $uuid): void
     {
         $object = $this->getObject($uuid, true);
-        $this->denyAccessUnlessGranted(AppProductVoter::ACTION_DELETE, $this->manager->getVoterSubject($object));
+        $this->denyAccessUnlessGranted(AppProductVoter::ACTION_DELETE, $this->manager->getVoterSubject($object, $this->getAppCode()));
         $this->manager->doRemove($object);
     }
 }

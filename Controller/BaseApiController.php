@@ -32,6 +32,9 @@ abstract class BaseApiController extends AbstractFOSRestController
 
     const DEFAULT_SERIALIZATION_GROUP = 'Api';
 
+    /** @var string|null */
+    protected $appCode;
+
     /**
      * @param string|null $uuid
      */
@@ -257,13 +260,13 @@ abstract class BaseApiController extends AbstractFOSRestController
     }
 
     /**
-     * @param Collection $collection
+     * @param array $collection
      * @param string $actionName
      * @return array
      */
     protected function filterCollection(array $collection, string $actionName): array
     {
-        return array_filter($collection, function (object $user) {
+        return array_filter($collection, function (object $user) use ($actionName) {
             return $this->isGranted($actionName, $user);
         });
     }
@@ -273,10 +276,18 @@ abstract class BaseApiController extends AbstractFOSRestController
      * @param string $actionName
      * @return array
      */
-    protected function checkCollection(iterable $collection, string $actionName): void
+    protected function checkCollection(iterable $collection, string $actionName, ?string $voterSubjectClass): void
     {
         foreach($collection as $item) {
-            $this->denyAccessUnlessGranted($actionName, $item);
+            $this->denyAccessUnlessGranted($actionName, $voterSubjectClass ? new $voterSubjectClass($item, $this->getAppCode()) : $item);
         }
+    }
+
+    /**
+     * @return string|null
+     */
+    public function getAppCode(): ?string
+    {
+        return $this->appCode;
     }
 }

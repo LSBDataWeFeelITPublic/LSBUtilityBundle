@@ -6,13 +6,15 @@ namespace LSB\UtilityBundle\Repository;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Gedmo\Tree\Entity\Repository\NestedTreeRepository;
+use LSB\UtilityBundle\Application\AppCodeTrait;
 
 /**
  * Class BaseNestedTreeRepository
  * @package LSB\UtilityBundle\Repository
  */
-class BaseNestedTreeRepository extends NestedTreeRepository
+abstract class BaseNestedTreeRepository extends NestedTreeRepository
 {
+    use AppCodeTrait;
     /**
      * CategoryRepository constructor.
      * @param EntityManagerInterface $em
