@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace LSB\UtilityBundle\Security;
 
+use LSB\UtilityBundle\Application\AppCodeTrait;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Core\Authorization\Voter\Voter;
 use Symfony\Component\Security\Core\Security;
@@ -13,6 +14,8 @@ use Symfony\Component\Security\Core\Security;
  */
 abstract class BaseObjectVoter extends Voter implements ObjectVoterInterface
 {
+    use AppCodeTrait;
+
     const SUBJECT_CLASS = null;
     const VOTER_SUBJECT_CLASS = null;
 
@@ -135,7 +138,7 @@ abstract class BaseObjectVoter extends Voter implements ObjectVoterInterface
      * @param object|null $object
      * @return string|null
      */
-    protected function getAppCode(?object $object): ?string
+    protected function getSubjectAppCode(?object $object): ?string
     {
         if ($object instanceof VoterSubjectInterface) {
             return $object->getAppCode();
