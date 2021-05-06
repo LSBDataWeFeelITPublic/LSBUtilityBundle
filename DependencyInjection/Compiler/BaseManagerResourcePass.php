@@ -126,9 +126,13 @@ abstract class BaseManagerResourcePass implements CompilerPassInterface
             $data
         );
 
-        $this->setFactoryArguments($appContextCode, $resourceConfiguration->getFactoryDefinition(), $resourceConfiguration->getEntityClass());
+        if ($resourceConfiguration->getFactoryDefinition()) {
+            $this->setFactoryArguments($appContextCode, $resourceConfiguration->getFactoryDefinition(), $resourceConfiguration->getEntityClass());
+        }
 
-        $this->setRepositoryArguments($appContextCode, $resourceConfiguration->getRepositoryDefinition(), $resourceConfiguration->getEntityClass());
+        if ($resourceConfiguration->getRepositoryDefinition()) {
+            $this->setRepositoryArguments($appContextCode, $resourceConfiguration->getRepositoryDefinition(), $resourceConfiguration->getEntityClass());
+        }
 
         if ($resourceConfiguration->getFormDefinition()) {
             $this->setFormArguments($appContextCode, $resourceConfiguration->getFormDefinition(), $useMethodCalls, $resourceConfiguration->getEntityClass(), $translationDomain);
