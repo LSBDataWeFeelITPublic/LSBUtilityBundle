@@ -89,6 +89,8 @@ abstract class BaseExtension extends Extension
     public function mapParameters(ContainerBuilder $container, array $config, string $prefix)
     {
 
+        dump($config);
+
         if (!isset($config[self::CONFIG_KEY_RESOURCES]) || !is_array($config[self::CONFIG_KEY_RESOURCES])) {
 //            throw new \Exception('Missing resources array. Check bundle configuration.');
             return;

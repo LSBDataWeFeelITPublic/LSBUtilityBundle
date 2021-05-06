@@ -27,6 +27,7 @@ class ArrayNodeDefinition extends BaseArrayNodeDefinition
     }
 
     /**
+     * @param string $entityClass
      * @param string $entityInterface
      * @param string $factoryClass
      * @param string $repositoryClass
@@ -36,6 +37,7 @@ class ArrayNodeDefinition extends BaseArrayNodeDefinition
      * @return $this
      */
     public function addClassesNode(
+        string $entityClass,
         string $entityInterface,
         string $factoryClass,
         string $repositoryClass,
@@ -46,8 +48,9 @@ class ArrayNodeDefinition extends BaseArrayNodeDefinition
         $this
             ->children()
             ->arrayNode(BE::CONFIG_KEY_CLASSES)
+            ->addDefaultsIfNotSet()
             ->children()
-            ->scalarNode(BE::CONFIG_KEY_ENTITY)->end()
+            ->scalarNode(BE::CONFIG_KEY_ENTITY)->defaultValue($entityClass)->end()
             ->scalarNode(BE::CONFIG_KEY_INTERFACE)->defaultValue($entityInterface)->end()
             ->scalarNode(BE::CONFIG_KEY_FACTORY)->defaultValue($factoryClass)->end()
             ->scalarNode(BE::CONFIG_KEY_REPOSITORY)->defaultValue($repositoryClass)->end()
@@ -62,19 +65,22 @@ class ArrayNodeDefinition extends BaseArrayNodeDefinition
     }
 
     /**
+     * @param string $translationEntityClass
      * @param string $translationEntityInterface
      * @param string $translationFormTypeClass
      * @return $this
      */
     public function addTranslationNode(
+        string $translationEntityClass,
         string $translationEntityInterface,
         string $translationFormTypeClass
     ): BaseArrayNodeDefinition {
         $this
             ->children()
             ->arrayNode(BE::CONFIG_KEY_TRANSLATION)
+            ->addDefaultsIfNotSet()
             ->children()
-            ->scalarNode(BE::CONFIG_KEY_ENTITY)->end()
+            ->scalarNode(BE::CONFIG_KEY_ENTITY)->defaultValue($translationEntityClass)->end()
             ->scalarNode(BE::CONFIG_KEY_INTERFACE)->defaultValue($translationEntityInterface)->end()
             ->scalarNode(BE::CONFIG_KEY_FACTORY)->end()
             ->scalarNode(BE::CONFIG_KEY_REPOSITORY)->end()
@@ -156,17 +162,20 @@ class ArrayNodeDefinition extends BaseArrayNodeDefinition
     public function addResourceNode(
         bool $addTranslationNode,
         bool $addContextNode,
+        string $entityClass,
         string $entityInterface,
         string $factoryClass,
         string $repositoryClass,
         string $managerClass,
         string $typeClass,
+        ?string $translationEntityClass,
         ?string $translationEntityInterface,
         ?string $translationTypeClass,
         ?string $voterSubjectClass
     ) {
         $tree = $this
             ->addClassesNode(
+                $entityClass,
                 $entityInterface,
                 $factoryClass,
                 $repositoryClass,
@@ -177,6 +186,7 @@ class ArrayNodeDefinition extends BaseArrayNodeDefinition
 
         if ($addTranslationNode) {
             $tree->addTranslationNode(
+                $translationEntityClass,
                 $translationEntityInterface,
                 $translationTypeClass
             );

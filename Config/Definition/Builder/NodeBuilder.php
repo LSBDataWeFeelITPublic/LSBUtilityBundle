@@ -6,7 +6,6 @@ namespace LSB\UtilityBundle\Config\Definition\Builder;
 use LSB\UtilityBundle\DependencyInjection\BaseExtension as BE;
 use Symfony\Component\Config\Definition\Builder\NodeBuilder as BaseNodeBuilder;
 
-
 /**
  * This class provides a fluent interface for building a node.
  *
@@ -38,21 +37,25 @@ class NodeBuilder extends BaseNodeBuilder
     public function resourcesNode(string $name = BE::CONFIG_KEY_RESOURCES)
     {
         $node = new ArrayNodeDefinition($name);
+        $node->addDefaultsIfNotSet();
         $this->append($node);
         return $node;
     }
 
     /**
      * @param string $resourceName
+     * @param string $entityClass
      * @param string $entityInterface
      * @param string $factoryClass
      * @param string $repositoryClass
      * @param string $managerClass
      * @param string $typeClass
+     * @param string|null $voterSubjectClass
      * @return ArrayNodeDefinition
      */
     public function resourceNode(
         string $resourceName,
+        string $entityClass,
         string $entityInterface,
         string $factoryClass,
         string $repositoryClass,
@@ -61,14 +64,17 @@ class NodeBuilder extends BaseNodeBuilder
         ?string $voterSubjectClass = null
     ) {
         $node = new ArrayNodeDefinition($resourceName);
+        $node->addDefaultsIfNotSet();
         $node->addResourceNode(
             false,
             true,
+            $entityClass,
             $entityInterface,
             $factoryClass,
             $repositoryClass,
             $managerClass,
             $typeClass,
+            null,
             null,
             null,
             $voterSubjectClass
@@ -81,35 +87,43 @@ class NodeBuilder extends BaseNodeBuilder
 
     /**
      * @param string $resourceName
+     * @param string $entityClass
      * @param string $entityInterface
      * @param string $factoryClass
      * @param string $repositoryClass
      * @param string $managerClass
      * @param string $typeClass
+     * @param string $translationEntityClass
      * @param string $translationEntityInterface
      * @param string $translationTypeClass
+     * @param string|null $voterSubjectClass
      * @return ArrayNodeDefinition
      */
     public function translatedResourceNode(
         string $resourceName,
+        string $entityClass,
         string $entityInterface,
         string $factoryClass,
         string $repositoryClass,
         string $managerClass,
         string $typeClass,
+        string $translationEntityClass,
         string $translationEntityInterface,
         string $translationTypeClass,
         ?string $voterSubjectClass = null
     ): ArrayNodeDefinition {
         $node = new ArrayNodeDefinition($resourceName);
+        $node->addDefaultsIfNotSet();
         $node->addResourceNode(
             true,
             true,
+            $entityClass,
             $entityInterface,
             $factoryClass,
             $repositoryClass,
             $managerClass,
             $typeClass,
+            $translationEntityClass,
             $translationEntityInterface,
             $translationTypeClass,
             $voterSubjectClass
@@ -121,14 +135,13 @@ class NodeBuilder extends BaseNodeBuilder
     }
 
     /**
-     * @param string $traslationDomain
+     * @param string $translationDomain
      * @return ScalarNodeDefinition
      */
-    public function translationDomainScalar(string $traslationDomain)
+    public function translationDomainScalar(string $translationDomain)
     {
         $node = new ScalarNodeDefinition(BE::CONFIG_KEY_TRANSLATION_DOMAIN);
-        $node->defaultValue($traslationDomain);
-
+        $node->defaultValue($translationDomain);
         $this->append($node);
 
         return $node;

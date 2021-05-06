@@ -61,8 +61,7 @@ abstract class BaseManagerResourcePass implements CompilerPassInterface
         $translationDomainParameterName = $prefix . '.' . BE::CONFIG_KEY_CONFIG . '.' . BE::CONFIG_KEY_TRANSLATION_DOMAIN;
 
         if (!$container->hasParameter($resourcesParameterName)) {
-//            throw new \InvalidArgumentException("Missing $prefix resource parameter: $resourcesParameterName");
-            return;
+            throw new \InvalidArgumentException("Missing $prefix resource parameter: $resourcesParameterName");
         }
         $configParameterName = $prefix.BE::DOT.BE::CONFIG_KEY_CONFIG;
         $config = $container->getParameter($configParameterName);

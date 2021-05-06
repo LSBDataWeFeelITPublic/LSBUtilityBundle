@@ -32,7 +32,6 @@ abstract class BaseResolveEntitiesPass implements CompilerPassInterface
         $resourcesParameterName = $prefix.'.'.static::CONFIG_KEY_CONFIG.'.'.static::CONFIG_KEY_RESOURCES;
 
         if (!$container->hasParameter($resourcesParameterName)) {
-//            throw new \InvalidArgumentException("Missing $prefix resource parameter: $resourcesParameterName");
             return;
         }
 
