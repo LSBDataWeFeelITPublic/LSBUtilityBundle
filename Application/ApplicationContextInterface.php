@@ -10,7 +10,8 @@ namespace LSB\UtilityBundle\Application;
 interface ApplicationContextInterface
 {
     /**
+     * @param bool $fetch
      * @return string|null
      */
-    public function getAppCode(): ?string;
+    public function getAppCode(bool $fetch = true): ?string;
 }

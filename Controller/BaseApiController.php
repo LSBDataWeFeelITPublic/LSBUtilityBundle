@@ -7,6 +7,7 @@ use Exception;
 use FOS\RestBundle\Controller\AbstractFOSRestController;
 use Knp\Component\Pager\Pagination\PaginationInterface;
 use Knp\Component\Pager\PaginatorInterface;
+use LSB\UtilityBundle\Application\AppCodeTrait;
 use LSB\UtilityBundle\Manager\ManagerInterface;
 use LSB\UtilityBundle\Repository\PaginationInterface as RepositoryPaginationInterface;
 use Symfony\Component\Form\FormInterface;
@@ -24,6 +25,8 @@ use Symfony\Component\Form\Form;
  */
 abstract class BaseApiController extends AbstractFOSRestController
 {
+    use AppCodeTrait;
+
     const DEFAULT_PAGE = 1;
     const DEFAULT_LIMIT = 10;
 
@@ -31,9 +34,6 @@ abstract class BaseApiController extends AbstractFOSRestController
     const REQUEST_QUERY_PARAMETER_LIMIT = 'limit';
 
     const DEFAULT_SERIALIZATION_GROUP = 'Api';
-
-    /** @var string|null */
-    protected $appCode;
 
     /**
      * @param string|null $uuid
@@ -281,13 +281,5 @@ abstract class BaseApiController extends AbstractFOSRestController
         foreach($collection as $item) {
             $this->denyAccessUnlessGranted($actionName, $voterSubjectClass ? new $voterSubjectClass($item, $this->getAppCode()) : $item);
         }
-    }
-
-    /**
-     * @return string|null
-     */
-    public function getAppCode(): ?string
-    {
-        return $this->appCode;
     }
 }

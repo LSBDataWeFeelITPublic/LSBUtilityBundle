@@ -284,20 +284,4 @@ abstract class BaseManager implements ManagerInterface
         $voterSubjectClass = $this->getResourceVoterSubjectClass();
         return new $voterSubjectClass(...$args);
     }
-
-    /**
-     * @return string|null
-     */
-    public function getAppCode(): ?string
-    {
-        return $this->appCode;
-    }
-
-    /**
-     * @param string|null $appCode
-     */
-    public function setAppCode(?string $appCode): void
-    {
-        $this->appCode = $appCode;
-    }
 }

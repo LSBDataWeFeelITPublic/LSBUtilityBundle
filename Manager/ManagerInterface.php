@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace LSB\UtilityBundle\Manager;
 
+use LSB\UtilityBundle\Application\ApplicationContextInterface;
 use LSB\UtilityBundle\Factory\FactoryInterface;
 use LSB\UtilityBundle\Form\BaseEntityType;
 use LSB\UtilityBundle\Repository\RepositoryInterface;
@@ -12,7 +13,7 @@ use LSB\UtilityBundle\Security\VoterSubjectInterface;
  * Interface ManagerInterface
  * @package LSB\UtilityBundle\Service
  */
-interface ManagerInterface
+interface ManagerInterface extends ApplicationContextInterface
 {
     /**
      * @return ObjectManagerInterface
@@ -112,14 +113,4 @@ interface ManagerInterface
      * @return VoterSubjectInterface
      */
     public function getVoterSubject(...$args): VoterSubjectInterface;
-
-    /**
-     * @return string|null
-     */
-    public function getAppCode(): ?string;
-
-    /**
-     * @param string|null $appCode
-     */
-    public function setAppCode(?string $appCode): void;
 }

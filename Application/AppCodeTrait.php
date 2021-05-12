@@ -14,8 +14,12 @@ trait AppCodeTrait
     /**
      * @return string|null
      */
-    public function getAppCode(): ?string
+    public function getAppCode(bool $fetch = true): ?string
     {
+        if ($fetch) {
+            $this->fetchAppCode();
+        }
+
         return $this->appCode;
     }
 
@@ -34,7 +38,7 @@ trait AppCodeTrait
      */
     protected function fetchAppCode(): void
     {
-        if ($this->getAppCode()) {
+        if ($this->getAppCode(false)) {
             return;
         }
 
