@@ -42,6 +42,8 @@ abstract class BaseManagerResourcePass implements CompilerPassInterface
     const ARGUMENT_ENTITY_CLASS = '$entityClass';
     const ARGUMENT_APP_CODE = '$appCode';
 
+    const DEFAULT_TRANSLATION_DOMAIN = 'messages';
+
     /**
      * @param ContainerBuilder $container
      * @param string $prefix
@@ -61,6 +63,7 @@ abstract class BaseManagerResourcePass implements CompilerPassInterface
         $translationDomainParameterName = $prefix . '.' . BE::CONFIG_KEY_CONFIG . '.' . BE::CONFIG_KEY_TRANSLATION_DOMAIN;
 
         if (!$container->hasParameter($resourcesParameterName)) {
+            return;
             throw new \InvalidArgumentException("Missing $prefix resource parameter: $resourcesParameterName");
         }
         $configParameterName = $prefix.BE::DOT.BE::CONFIG_KEY_CONFIG;
@@ -90,7 +93,7 @@ abstract class BaseManagerResourcePass implements CompilerPassInterface
      * @param array $data
      * @param bool $useMethodCalls
      * @param array $config
-     * @param string $translationDomain
+     * @param string|null $translationDomain
      * @throws \ReflectionException
      */
     protected function configureResourceContext(
@@ -100,7 +103,7 @@ abstract class BaseManagerResourcePass implements CompilerPassInterface
         array $data,
         bool $useMethodCalls,
         array &$config,
-        string $translationDomain
+        ?string $translationDomain
     ): void {
         //get data
         $resourceConfiguration = $this->getClassesFromResourceData($container, $appContextCode, $data);
@@ -316,17 +319,21 @@ abstract class BaseManagerResourcePass implements CompilerPassInterface
      * @param Definition $formDef
      * @param bool $useMethodCalls
      * @param string $entityClass
-     * @param string $translationDomain
+     * @param string|null $translationDomain
      */
     protected function setFormArguments(
         ?string $appCode,
         Definition $formDef,
         bool $useMethodCalls,
         string $entityClass,
-        string $translationDomain
+        ?string $translationDomain
     ): void {
         if ($this->isServiceProcessed($formDef->getClass())) {
             return;
+        }
+
+        if (!$translationDomain) {
+            $translationDomain = self::DEFAULT_TRANSLATION_DOMAIN;
         }
 
         $formDef->addMethodCall('setAppCode', [$appCode]);
@@ -347,7 +354,7 @@ abstract class BaseManagerResourcePass implements CompilerPassInterface
      * @param string $formClass
      * @param bool $useMethodCalls
      * @param string $entityClass
-     * @param string $translationDomain
+     * @param string|null $translationDomain
      * @throws \ReflectionException
      */
     protected function setFormParentsArguments(
@@ -355,7 +362,7 @@ abstract class BaseManagerResourcePass implements CompilerPassInterface
         string  $formClass,
         bool $useMethodCalls,
         string $entityClass,
-        string $translationDomain
+        ?string $translationDomain
     ): void {
         $parentsClasses = class_parents($formClass);
 
