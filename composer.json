@@ -19,7 +19,9 @@
         "stof/doctrine-extensions-bundle": "^1.6",
         "ramsey/uuid-doctrine": "^1.5",
         "symfony/uid": "^5.2",
-        "knplabs/knp-paginator-bundle": "^5.0@dev"
+        "knplabs/knp-paginator-bundle": "^5.0@dev",
+        "lsb/locale-bundle": "dev-master",
+        "lsb/pricelist-bundle": "dev-master"
     },
     "require-dev": {
     },
@@ -27,5 +29,15 @@
         "psr-4": {
             "LSB\\UtilityBundle\\": ""
         }
-    }
+    },
+    "repositories": [
+        {
+            "type": "git",
+            "url": "https://github.com/LSBDataWeFeelITPublic/LSBLocaleBundle.git"
+        },
+        {
+            "type": "git",
+            "url": "https://github.com/LSBDataWeFeelITPublic/LSBPricelistBundle.git"
+        }
+    ]
 }
