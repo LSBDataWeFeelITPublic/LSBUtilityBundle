@@ -113,4 +113,16 @@ interface ManagerInterface extends ApplicationContextInterface
      * @return VoterSubjectInterface
      */
     public function getVoterSubject(...$args): VoterSubjectInterface;
+
+    /**
+     * @param int $id
+     * @return mixed
+     */
+    public function getById(int $id);
+
+    /**
+     * @param string $uuid
+     * @return null
+     */
+    public function getByUuid(string $uuid);
 }

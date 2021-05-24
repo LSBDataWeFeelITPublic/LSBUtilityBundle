@@ -32,6 +32,13 @@ interface ObjectManagerInterface
     public function flush(): void;
 
     /**
+     * Refresh
+     *
+     * @param object $object
+     */
+    public function refresh(object $object): object;
+
+    /**
      * Get repository by FQCN
      *
      * @param string $fqcn

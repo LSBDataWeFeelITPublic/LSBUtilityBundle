@@ -47,6 +47,17 @@ class ObjectManager implements ObjectManagerInterface
     }
 
     /**
+     * Persist
+     *
+     * @param object $object
+     * @return object
+     */
+    public function refresh(object $object): object
+    {
+        return $this->em->refresh($object);
+    }
+
+    /**
      * Flush
      */
     public function flush(): void

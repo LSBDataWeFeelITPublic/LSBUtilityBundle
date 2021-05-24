@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace LSB\UtilityBundle\Manager;
 
 use Knp\DoctrineBehaviors\Contract\Entity\TranslatableInterface;
+use LSB\NotificationBundle\Entity\Notification;
 use LSB\UtilityBundle\Application\AppCodeTrait;
 use LSB\UtilityBundle\Factory\FactoryInterface;
 use LSB\UtilityBundle\Form\BaseEntityType;
@@ -13,6 +14,7 @@ use LSB\UtilityBundle\Security\VoterSubjectInterface;
 use Symfony\Component\Form\AbstractType;
 use LSB\UtilityBundle\Exception\ObjectManager\DoRemoveException;
 use LSB\UtilityBundle\Exception\ObjectManager\DoPersistException;
+use Webmozart\Assert\Assert;
 
 /**
  * Class BaseManager
@@ -140,6 +142,15 @@ abstract class BaseManager implements ManagerInterface
     public function flush()
     {
         $this->getObjectManager()->flush();
+    }
+
+    /**
+     * @param object $object
+     */
+    public function update(object $object)
+    {
+        $this->persist($object);
+        $this->flush();
     }
 
     /**
@@ -283,5 +294,30 @@ abstract class BaseManager implements ManagerInterface
     {
         $voterSubjectClass = $this->getResourceVoterSubjectClass();
         return new $voterSubjectClass(...$args);
+    }
+
+    /**
+     * @param int $id
+     * @return mixed
+     * @throws \Exception
+     */
+    public function getById(int $id)
+    {
+        return $this->getRepository()->findOneBy(['id' => $id]);
+    }
+
+    /**
+     * @param string $uuid
+     * @return null
+     */
+    public function getByUuid(string $uuid)
+    {
+        try {
+            Assert::uuid($uuid);
+            return $this->getRepository()->findOneBy(['uuid' => $uuid]);
+        } catch (\Exception $e) {
+        }
+
+        return null;
     }
 }
