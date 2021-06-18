@@ -19,9 +19,7 @@
         "stof/doctrine-extensions-bundle": "^1.6",
         "ramsey/uuid-doctrine": "^1.5",
         "symfony/uid": "^5.2",
-        "knplabs/knp-paginator-bundle": "^5.0@dev",
-        "lsb/locale-bundle": ">=0.1",
-        "lsb/pricelist-bundle": ">=0.1"
+        "knplabs/knp-paginator-bundle": "^5.0@dev"
     },
     "require-dev": {
     },

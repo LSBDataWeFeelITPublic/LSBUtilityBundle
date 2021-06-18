@@ -5,8 +5,6 @@ namespace LSB\UtilityBundle\Calculator;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
-use LSB\LocaleBundle\Manager\TaxManager;
-use LSB\PricelistBundle\Manager\PricelistManager;
 use LSB\UtilityBundle\Interfaces\TotalCalculatorInterface;
 use LSB\UtilityBundle\Interfaces\TotalCalculatorRepositoryInterface;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
@@ -31,11 +29,6 @@ abstract class BaseTotalCalculator implements TotalCalculatorInterface
     protected $em;
 
     /**
-     * @var PriceListManager
-     */
-    protected $priceListManager;
-
-    /**
      * @var EventDispatcherInterface
      */
     protected $eventDispatcher;
@@ -44,11 +37,6 @@ abstract class BaseTotalCalculator implements TotalCalculatorInterface
      * @var TokenStorageInterface
      */
     protected $tokenStorage;
-
-    /**
-     * @var TaxManager
-     */
-    protected $taxManager;
 
     /**
      * @var array
@@ -68,23 +56,17 @@ abstract class BaseTotalCalculator implements TotalCalculatorInterface
     /**
      * BaseTotalCalculator constructor.
      * @param EntityManagerInterface $em
-     * @param PriceListManager $priceListManager
      * @param EventDispatcherInterface $eventDispatcher
      * @param TokenStorageInterface $tokenStorage
-     * @param TaxManager $taxManager
      */
     public function __construct(
         EntityManagerInterface $em,
-        PriceListManager $priceListManager,
         EventDispatcherInterface $eventDispatcher,
         TokenStorageInterface $tokenStorage,
-        TaxManager $taxManager
     ) {
         $this->em = $em;
-        $this->priceListManager = $priceListManager;
         $this->eventDispatcher = $eventDispatcher;
         $this->tokenStorage = $tokenStorage;
-        $this->taxManager = $taxManager;
     }
 
 //    /**

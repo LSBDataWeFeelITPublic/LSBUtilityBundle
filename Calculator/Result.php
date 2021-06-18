@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace LSB\UtilityBundle\Calculator;
 
-use LSB\LocaleBundle\Entity\CurrencyInterface;
+//use LSB\LocaleBundle\Entity\CurrencyInterface;
 
 /**
  * Class Result
@@ -11,10 +11,10 @@ use LSB\LocaleBundle\Entity\CurrencyInterface;
  */
 class Result
 {
-    /**
-     * @var CurrencyInterface
-     */
-    protected ?CurrencyInterface $currency;
+//    /**
+//     * @var CurrencyInterface
+//     */
+//    protected ?CurrencyInterface $currency;
 
     /**
      * @var float
@@ -56,21 +56,10 @@ class Result
      */
     protected array $calculationPaymentCostRes;
 
-    /**
-     * CalculatorResult constructor.
-     * @param bool $isSuccess
-     * @param CurrencyInterface|null $currency
-     * @param float $totalNetto
-     * @param float $totalGross
-     * @param null $subject
-     * @param array $calculationRes
-     * @param array $calculationProductRes
-     * @param array $calculationShippingRes
-     * @param array $calculationPaymentCostRes
-     */
+
     public function __construct(
         bool $isSuccess,
-        ?CurrencyInterface $currency,
+//        ?CurrencyInterface $currency,
         float $totalNetto,
         float $totalGross,
         $subject = null,
@@ -80,7 +69,7 @@ class Result
         array &$calculationPaymentCostRes = []
     ) {
         $this->isSuccess = $isSuccess;
-        $this->currency = $currency;
+//        $this->currency = $currency;
         $this->totalNet = $totalNetto;
         $this->totalGross = $totalGross;
         $this->subject = $subject;
@@ -90,23 +79,23 @@ class Result
         $this->calculationPaymentCostRes = $calculationPaymentCostRes;
     }
 
-    /**
-     * @return CurrencyInterface
-     */
-    public function getCurrency(): ?CurrencyInterface
-    {
-        return $this->currency;
-    }
-
-    /**
-     * @param CurrencyInterface|null $currency
-     * @return Result
-     */
-    public function setCurrency(?CurrencyInterface $currency): Result
-    {
-        $this->currency = $currency;
-        return $this;
-    }
+//    /**
+//     * @return CurrencyInterface
+//     */
+//    public function getCurrency(): ?CurrencyInterface
+//    {
+//        return $this->currency;
+//    }
+//
+//    /**
+//     * @param CurrencyInterface|null $currency
+//     * @return Result
+//     */
+//    public function setCurrency(?CurrencyInterface $currency): Result
+//    {
+//        $this->currency = $currency;
+//        return $this;
+//    }
 
     /**
      * @return float
