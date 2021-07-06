@@ -2,6 +2,7 @@ services:
     LSB\UtilityBundle\Manager\ObjectManager:
         arguments:
             - '@doctrine.orm.default_entity_manager'
+            - '@validator'
 
     lsb_utility_object_manager:
         alias: 'LSB\UtilityBundle\Manager\ObjectManager'

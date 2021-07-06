@@ -5,6 +5,7 @@ namespace LSB\UtilityBundle\Manager;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ObjectRepository;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 /**
  * Class ObjectManager
@@ -15,15 +16,24 @@ class ObjectManager implements ObjectManagerInterface
     /**
      * @var EntityManagerInterface
      */
-    protected $em;
+    protected EntityManagerInterface $em;
+
+    /**
+     * @var ValidatorInterface
+     */
+    protected ValidatorInterface $validator;
 
     /**
      * ObjectManager constructor.
      * @param EntityManagerInterface $em
+     * @param ValidatorInterface $validator
      */
-    public function __construct(EntityManagerInterface $em)
-    {
+    public function __construct(
+        EntityManagerInterface $em,
+        ValidatorInterface $validator
+    ) {
         $this->em = $em;
+        $this->validator = $validator;
     }
 
     /**
@@ -34,6 +44,15 @@ class ObjectManager implements ObjectManagerInterface
     public function persist(object $object): void
     {
         $this->em->persist($object);
+    }
+
+    /**
+     * @param object $object
+     * @return array
+     */
+    public function validate(object $object): iterable
+    {
+        return $this->validator->validate($object);
     }
 
     /**

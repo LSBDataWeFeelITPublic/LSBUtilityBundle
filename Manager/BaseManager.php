@@ -6,6 +6,7 @@ namespace LSB\UtilityBundle\Manager;
 use Knp\DoctrineBehaviors\Contract\Entity\TranslatableInterface;
 use LSB\NotificationBundle\Entity\Notification;
 use LSB\UtilityBundle\Application\AppCodeTrait;
+use LSB\UtilityBundle\Exception\ObjectManager\ValidationException;
 use LSB\UtilityBundle\Factory\FactoryInterface;
 use LSB\UtilityBundle\Form\BaseEntityType;
 use LSB\UtilityBundle\Repository\RepositoryInterface;
@@ -14,6 +15,7 @@ use LSB\UtilityBundle\Security\VoterSubjectInterface;
 use Symfony\Component\Form\AbstractType;
 use LSB\UtilityBundle\Exception\ObjectManager\DoRemoveException;
 use LSB\UtilityBundle\Exception\ObjectManager\DoPersistException;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Webmozart\Assert\Assert;
 
 /**
@@ -146,10 +148,34 @@ abstract class BaseManager implements ManagerInterface
 
     /**
      * @param object $object
+     * @return iterable
+     */
+    public function validate(object $object): iterable
+    {
+        return $this->getObjectManager()->validate($object);
+    }
+
+    /**
+     * @throws ValidationException
+     */
+    protected function checkValidation(object $object): void
+    {
+        $errors = $this->validate($object);
+        $errorList = array(...$errors);
+
+        if (count($errorList)) {
+            throw new ValidationException($errors);
+        }
+    }
+
+    /**
+     * @param object $object
+     * @throws \Exception
      */
     public function update(object $object)
     {
         $this->persist($object);
+        $this->checkValidation($object);
         $this->flush();
     }
 
@@ -170,7 +196,7 @@ abstract class BaseManager implements ManagerInterface
             $this->persist($object);
             $this->flush();
             return true;
-        } catch(\Exception $e) {
+        } catch (\Exception $e) {
             if ($throwException) {
                 throw new DoPersistException($e->getMessage(), $e->getCode(), $e->getPrevious());
             }
@@ -188,7 +214,7 @@ abstract class BaseManager implements ManagerInterface
             $this->remove($object);
             $this->flush();
             return true;
-        } catch(\Exception $e) {
+        } catch (\Exception $e) {
             if ($throwException) {
                 throw new DoRemoveException($e->getMessage(), $e->getCode(), $e->getPrevious());
             }
@@ -249,7 +275,7 @@ abstract class BaseManager implements ManagerInterface
     public function getResourceEntityClass(): string
     {
         if (isset($this->resourceConfiguration[BE::CONFIG_KEY_CLASSES][BE::CONFIG_KEY_ENTITY])) {
-            return (string) $this->resourceConfiguration[BE::CONFIG_KEY_CLASSES][BE::CONFIG_KEY_ENTITY];
+            return (string)$this->resourceConfiguration[BE::CONFIG_KEY_CLASSES][BE::CONFIG_KEY_ENTITY];
         }
 
         throw new \Exception('Resource: Entity FQCN is not set.');
@@ -264,9 +290,9 @@ abstract class BaseManager implements ManagerInterface
         if ($this->getAppCode()
             && isset($this->resourceConfiguration[BE::CONFIG_KEY_CONTEXT][$this->getAppCode()][BE::CONFIG_KEY_CLASSES][BE::CONFIG_KEY_VOTER_SUBJECT])
             && $this->resourceConfiguration[BE::CONFIG_KEY_CONTEXT][$this->getAppCode()][BE::CONFIG_KEY_CLASSES][BE::CONFIG_KEY_VOTER_SUBJECT]) {
-            return (string) $this->resourceConfiguration[BE::CONFIG_KEY_CONTEXT][$this->getAppCode()][BE::CONFIG_KEY_CLASSES][BE::CONFIG_KEY_VOTER_SUBJECT];
+            return (string)$this->resourceConfiguration[BE::CONFIG_KEY_CONTEXT][$this->getAppCode()][BE::CONFIG_KEY_CLASSES][BE::CONFIG_KEY_VOTER_SUBJECT];
         } elseif (isset($this->resourceConfiguration[BE::CONFIG_KEY_CLASSES][BE::CONFIG_KEY_VOTER_SUBJECT]) && $this->resourceConfiguration[BE::CONFIG_KEY_CLASSES][BE::CONFIG_KEY_VOTER_SUBJECT]) {
-            return (string) ($this->resourceConfiguration[BE::CONFIG_KEY_CLASSES][BE::CONFIG_KEY_VOTER_SUBJECT]);
+            return (string)($this->resourceConfiguration[BE::CONFIG_KEY_CLASSES][BE::CONFIG_KEY_VOTER_SUBJECT]);
         }
 
         throw new \Exception('Resource: Voter Subject FQCN is not set.');
@@ -279,7 +305,7 @@ abstract class BaseManager implements ManagerInterface
     public function getResourceFormClass(): string
     {
         if (isset($this->resourceConfiguration[BE::CONFIG_KEY_CLASSES][BE::CONFIG_KEY_FORM])) {
-            return (string) $this->resourceConfiguration[BE::CONFIG_KEY_CLASSES][BE::CONFIG_KEY_FORM];
+            return (string)$this->resourceConfiguration[BE::CONFIG_KEY_CLASSES][BE::CONFIG_KEY_FORM];
         }
 
         throw new \Exception('Resource: Voter Subject FQCN is not set.');
@@ -308,7 +334,7 @@ abstract class BaseManager implements ManagerInterface
 
     /**
      * @param string $uuid
-     * @return null
+     * @return mixed
      */
     public function getByUuid(string $uuid)
     {

@@ -27,6 +27,12 @@ interface ObjectManagerInterface
     public function remove(object $object): void;
 
     /**
+     * @param object $object
+     * @return iterable
+     */
+    public function validate(object $object): iterable;
+
+    /**
      * Flush
      */
     public function flush(): void;
