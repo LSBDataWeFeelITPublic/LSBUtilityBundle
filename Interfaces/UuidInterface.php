@@ -7,7 +7,7 @@ namespace LSB\UtilityBundle\Interfaces;
  * Interface UuidInterface
  * @package LSB\UtilityBundle\Interfaces
  */
-interface UuidInterface extends IdInterface
+interface UuidInterface extends IdInterface, \Stringable
 {
     /**
      * @param $uuid

@@ -11,27 +11,39 @@ use LSB\UtilityBundle\Module\ModuleInterface;
  */
 abstract class BaseModuleInventory implements ModuleInventoryInterface
 {
-    protected array $modules;
+    protected array $modules = [];
 
     /**
      * @param ModuleInterface $module
      */
     public function addModule(ModuleInterface $module): void
     {
-        $this->modules[$module->getName()] = $module;
+        $this->modules[$module->getName()][$module->getAdditionalName()] = $module;
     }
 
     /**
      * @param string $moduleName
+     * @param string $additionalName
      * @param bool $throwException
      * @return ModuleInterface|null
      * @throws \Exception
      */
-    public function getModuleByName(string $moduleName, bool $throwException = true): ?ModuleInterface
-    {
+    public function getModuleByName(
+        string $moduleName,
+        string $additionalName = ModuleInterface::ADDITIONAL_NAME_DEFAULT,
+        bool $throwException = true
+    ): ?ModuleInterface {
         if (array_key_exists($moduleName, $this->modules)
-            && $this->modules[$moduleName] instanceof ModuleInterface
         ) {
+            /**
+             * @var ModuleInterface $module
+             */
+            foreach ($this->modules[$moduleName] as $module) {
+                if ($module instanceof ModuleInterface && $module->getAdditionalName() === $additionalName) {
+                    return $module;
+                }
+            }
+
             return $this->modules[$moduleName];
         }
 
@@ -44,15 +56,27 @@ abstract class BaseModuleInventory implements ModuleInventoryInterface
 
     /**
      * @param string $className
+     * @param string $subname
      * @param bool $throwException
      * @return ModuleInterface|null
      * @throws \Exception
      */
-    public function getModuleByClass(string $className, bool $throwException = true): ?ModuleInterface
-    {
-        foreach ($this->modules as $module) {
-            if ($module instanceof ModuleInterface && $module instanceof $className) {
-                return $module;
+    public function getModuleByClass(
+        string $className,
+        string $subname = ModuleInterface::ADDITIONAL_NAME_DEFAULT,
+        bool $throwException = true
+    ): ?ModuleInterface {
+        /**
+         * @var array $modules
+         */
+        foreach ($this->modules as $modules) {
+            /**
+             * @var ModuleInterface $module
+             */
+            foreach ($modules as $module) {
+                if ($module instanceof ModuleInterface && $module instanceof $className && $module->getAdditionalName() === $additionalName) {
+                    return $module;
+                }
             }
         }
 
@@ -61,5 +85,13 @@ abstract class BaseModuleInventory implements ModuleInventoryInterface
         }
 
         return null;
+    }
+
+    /**
+     * @return array
+     */
+    public function getModules(): array
+    {
+        return $this->modules;
     }
 }

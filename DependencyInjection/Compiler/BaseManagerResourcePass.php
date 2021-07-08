@@ -84,7 +84,36 @@ abstract class BaseManagerResourcePass implements CompilerPassInterface
                 $this->configureResourceContext($container, $appContextCode, $resource, $data, $useMethodCalls, $config, $translationDomain);
             }
         }
+
+        $this->setServiceAliases($container, $prefix);
     }
+
+    protected function setServiceAliases(ContainerBuilder $container, string $prefix, bool $validateAliasForExistence = true): void
+    {
+        //Alias mapping
+        $servicesParameterName = $prefix . '.' . BE::CONFIG_KEY_CONFIG . '.' . BE::CONFIG_KEY_SERVICES;
+        $servicesDefaultsParameterName = $prefix . '.' . BE::CONFIG_KEY_CONFIG . '.' . BE::CONFIG_KEY_SERVICES_DEFAULTS;
+        $mergedAliases = array_merge((array)$container->getParameter($servicesDefaultsParameterName), (array)$container->getParameter($servicesParameterName));
+
+
+        /**
+         * @var string $alias
+         * @var string $serviceClass
+         */
+        foreach ($mergedAliases as $alias => $serviceClass) {
+            //Aliased service must be defined
+            if (!$container->hasDefinition($serviceClass)) {
+                throw new \InvalidArgumentException("Alias error: Service {$serviceClass} not exists.");
+            }
+
+            if ($validateAliasForExistence && !interface_exists($alias) && !class_exists($alias)) {
+                throw new \InvalidArgumentException("Alias error: FQCN {$alias} not exists.");
+            }
+        }
+
+        $container->addAliases($mergedAliases);
+    }
+
 
     /**
      * @param ContainerBuilder $container

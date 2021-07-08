@@ -20,6 +20,8 @@ abstract class BaseExtension extends Extension
     const DOT = '.';
 
     const CONFIG_KEY_CONFIG = 'config';
+    const CONFIG_KEY_SERVICES = 'services';
+    const CONFIG_KEY_SERVICES_DEFAULTS = 'services_defaults';
     const CONFIG_KEY_CLASSES = 'classes';
     const CONFIG_KEY_ENTITY = 'entity';
     const CONFIG_KEY_INTERFACE = 'interface';
@@ -97,10 +99,14 @@ abstract class BaseExtension extends Extension
         $configParameterName = $prefix.static::DOT.static::CONFIG_KEY_CONFIG;
         $resourcesParameterName = $prefix.static::DOT.static::CONFIG_KEY_CONFIG.static::DOT.static::CONFIG_KEY_RESOURCES;
         $translationDomainParameterName = $prefix.static::DOT.static::CONFIG_KEY_CONFIG.static::DOT.static::CONFIG_KEY_TRANSLATION_DOMAIN;
+        $servicesParameterName = $prefix.static::DOT.static::CONFIG_KEY_CONFIG.static::DOT.static::CONFIG_KEY_SERVICES;
+        $servicesDefaultsParameterName = $prefix.static::DOT.static::CONFIG_KEY_CONFIG.static::DOT.static::CONFIG_KEY_SERVICES_DEFAULTS;
 
         $container->setParameter($configParameterName, $config ?? []);
         $container->setParameter($resourcesParameterName, $config[self::CONFIG_KEY_RESOURCES] ?? []);
         $container->setParameter($translationDomainParameterName, $config[self::CONFIG_KEY_TRANSLATION_DOMAIN] ?? null);
+        $container->setParameter($servicesParameterName, $config[self::CONFIG_KEY_SERVICES] ?? null);
+        $container->setParameter($servicesDefaultsParameterName, $config[self::CONFIG_KEY_SERVICES_DEFAULTS] ?? null);
 
         $classesList = [
             static::CONFIG_KEY_ENTITY,

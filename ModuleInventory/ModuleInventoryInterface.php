@@ -9,5 +9,10 @@ namespace LSB\UtilityBundle\ModuleInventory;
  */
 interface ModuleInventoryInterface
 {
+    const SUBNAME = 'default';
 
+    /**
+     * @return array
+     */
+    public function getModules(): array;
 }

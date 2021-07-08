@@ -150,13 +150,16 @@ class ArrayNodeDefinition extends BaseArrayNodeDefinition
     /**
      * @param bool $addTranslationNode
      * @param bool $addContextNode
+     * @param string $entityClass
      * @param string $entityInterface
      * @param string $factoryClass
      * @param string $repositoryClass
      * @param string $managerClass
      * @param string $typeClass
+     * @param string|null $translationEntityClass
      * @param string|null $translationEntityInterface
      * @param string|null $translationTypeClass
+     * @param string|null $voterSubjectClass
      * @return $this
      */
     public function addResourceNode(

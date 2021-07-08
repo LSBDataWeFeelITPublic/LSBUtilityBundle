@@ -25,6 +25,14 @@ trait UuidTrait
     protected $uuid = null;
 
     /**
+     * @return string
+     */
+    public function __toString(): string
+    {
+        return (string) $this->uuid;
+    }
+
+    /**
      * @param bool $force
      * @return string
      * @throws \Exception

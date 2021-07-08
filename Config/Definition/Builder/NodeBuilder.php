@@ -3,7 +3,9 @@ declare(strict_types=1);
 
 namespace LSB\UtilityBundle\Config\Definition\Builder;
 
+use LSB\UtilityBundle\Config\Definition\Service\ServicesConfiguration;
 use LSB\UtilityBundle\DependencyInjection\BaseExtension as BE;
+use Symfony\Component\Config\Definition\Builder\ArrayNodeDefinition as BaseArrayNodeDefinition;
 use Symfony\Component\Config\Definition\Builder\NodeBuilder as BaseNodeBuilder;
 
 /**
@@ -79,7 +81,7 @@ class NodeBuilder extends BaseNodeBuilder
             null,
             $voterSubjectClass
         );
-        
+
         $this->append($node);
 
         return $node;
@@ -160,5 +162,49 @@ class NodeBuilder extends BaseNodeBuilder
         $this->append($node);
 
         return $node;
+    }
+
+
+    /**
+     *
+     */
+    public function addServicesNode(
+        array $defaultAliases = []
+    ) {
+        $this
+            ->arrayNode(BE::CONFIG_KEY_SERVICES)
+            ->useAttributeAsKey('code')
+            ->prototype('scalar')->end()
+            ->defaultValue($defaultAliases)
+            ->end();
+
+        return $this;
+    }
+
+    /**
+     * @param ServicesConfiguration $configuration
+     * @return $this
+     */
+    public function addServicesNodeConfiguration(
+        ServicesConfiguration $configuration
+    ) {
+        $children = $this
+            ->arrayNode(BE::CONFIG_KEY_SERVICES_DEFAULTS)
+            ->addDefaultsIfNotSet()
+            ->ignoreExtraKeys()
+            ->children();
+        foreach ($configuration->getList() as $interface => $class) {
+            $children->scalarNode($interface)->defaultValue($class)->cannotBeEmpty()->end();
+        }
+
+        $children->end()
+            ->end()
+            ->arrayNode(BE::CONFIG_KEY_SERVICES)
+            ->useAttributeAsKey('code')
+            ->prototype('scalar')->end()
+            ->defaultValue([])
+            ->end();;
+
+        return $this;
     }
 }

@@ -121,9 +121,11 @@ abstract class BaseObjectVoter extends Voter implements ObjectVoterInterface
     }
 
     /**
-     * @return object|null
+     * @param mixed $object
+     * @param string|null $className
+     * @return mixed
      */
-    protected function getRealSubject(?object $object, ?string $className = null): ?object
+    protected function getRealSubject(mixed $object, ?string $className = null): mixed
     {
         if ($object instanceof VoterSubjectInterface && ($className === null || $object->getSubject() instanceof $className)) {
             return $object->getSubject();
