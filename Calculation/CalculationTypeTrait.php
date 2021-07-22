@@ -13,14 +13,14 @@ trait CalculationTypeTrait
 {
     /**
      * @var int
-     * @ORM\Column(type="integer")
+     * @ORM\Column(type="integer", options={"default": 10})
      */
     protected int $calculationType = CalculationTypeInterface::CALCULATION_TYPE_NET;
 
 
     /**
      * @var int
-     * @ORM\Column(type="integer")
+     * @ORM\Column(type="integer", options={"default": 10})
      */
     protected int $vatCalculationType = CalculationTypeInterface::VAT_CALCULATION_TYPE_ADD;
 
