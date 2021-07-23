@@ -51,12 +51,25 @@ class ValueHelper
      * @param Money|null $money
      * @return array
      */
-    public static function moneyToInt(?Money $money): array
+    public static function moneyToIntCurrency(?Money $money): array
     {
         if ($money === null) {
             return [null, null];
         }
 
-        return [$money->getAmount(), $money->getCurrency()];
+        return [(int) $money->getAmount(), $money->getCurrency()];
+    }
+
+    /**
+     * @param Money|null $money
+     * @return array
+     */
+    public static function moneyToInt(Money|int|null $money): ?int
+    {
+        if ($money instanceof Money) {
+            return (int) $money->getAmount();
+        }
+
+        return $money;
     }
 }
