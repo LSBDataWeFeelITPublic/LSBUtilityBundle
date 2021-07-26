@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace LSB\UtilityBundle\Helper;
 
+use Alcohol\ISO4217;
+use LSB\UtilityBundle\Value\Value;
 use Money\Currency;
 use Money\Money;
 
@@ -57,12 +59,12 @@ class ValueHelper
             return [null, null];
         }
 
-        return [(int) $money->getAmount(), $money->getCurrency()];
+        return [(int) $money->getAmount(), (string) $money->getCurrency()];
     }
 
     /**
-     * @param Money|null $money
-     * @return array
+     * @param Money|int|null $money
+     * @return int|null
      */
     public static function moneyToInt(Money|int|null $money): ?int
     {
@@ -71,5 +73,88 @@ class ValueHelper
         }
 
         return $money;
+    }
+
+    /**
+     * @param Value|null $value
+     * @return array
+     */
+    public static function valueToIntUnit(?Value $value): array
+    {
+        if ($value === null) {
+            return [null, null];
+        }
+
+        return [(int) $value->getAmount(), $value->getUnit()];
+    }
+
+    /**
+     * @param Value|int|null $value
+     * @return int|null
+     */
+    public static function valueToInt(Value|int|null $value): ?int
+    {
+        if ($value instanceof Money) {
+            return (int) $value->getAmount();
+        }
+
+        return $value;
+    }
+
+    /**
+     * @param int|null $amount
+     * @param string|null $unit
+     * @param int $precision
+     * @return Value|null
+     */
+    public static function intToValue(?int $amount, ?string $unit, int $precision = 2): ?Value
+    {
+        if ($amount === null) {
+            return null;
+        }
+
+        return new Value($amount, $unit, $precision);
+    }
+
+    /**
+     * @param $amount
+     * @param string|null $unit
+     * @param int $precision
+     * @return Value|null
+     */
+    public static function convertToValue($amount, ?string $unit = null, int $precision = 2): ?Value
+    {
+        if ($amount === null) {
+            return null;
+        }
+
+        $multipier = pow(10,$precision);
+        return new Value((int) round($amount * $multipier), $unit, $precision);
+    }
+
+    /**
+     * @param $amount
+     * @param string $currencyIsoCode
+     * @return Money|null
+     * @throws \Exception
+     */
+    public static function convertToMoney($amount, string $currencyIsoCode): ?Money
+    {
+        if ($amount === null) {
+            return null;
+        }
+
+        $iso4217 = new ISO4217();
+
+        $result = $iso4217->getByAlpha3('EUR');
+
+        if (!isset($result['exp'])) {
+            throw new \Exception('Missing currency exp');
+        }
+
+        $currency = new Currency($currencyIsoCode);
+
+        $multipier = pow(10, $result['exp']);
+        return new Money((int) round($amount * $multipier), $currency);
     }
 }
