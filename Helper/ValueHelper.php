@@ -85,7 +85,7 @@ class ValueHelper
             return [null, null];
         }
 
-        return [(int) $value->getAmount(), $value->getUnit()];
+        return [(int) $value->getAmount(),  $value->getUnit() ? (string) $value->getUnit() : null];
     }
 
     /**
