@@ -85,6 +85,20 @@ class Value
     }
 
     /**
+     * @return float|null
+     */
+    public function getFloatAmount(): ?float
+    {
+        if ($this->amount === null || $this->precision === null) {
+            return null;
+        }
+
+        $multipier = pow(10, $this->precision);
+        
+        return round($this->amount / $multipier, $this->getPrecision());
+    }
+
+    /**
      * @param string $amount
      * @return Value
      */
