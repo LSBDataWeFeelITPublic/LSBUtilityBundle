@@ -20,7 +20,7 @@ class ValueHelper
      */
     public static function toFloat(float|string|null $value): ?float
     {
-        return is_null($value) ? null : (float) $value;
+        return is_null($value) ? null : (float)$value;
     }
 
     /**
@@ -29,7 +29,7 @@ class ValueHelper
      */
     public static function toString(float|string|null $value): ?string
     {
-        return is_null($value) ? null : (string) $value;
+        return is_null($value) ? null : (string)$value;
     }
 
     /**
@@ -59,7 +59,7 @@ class ValueHelper
             return [null, null];
         }
 
-        return [(int) $money->getAmount(), (string) $money->getCurrency()];
+        return [(int)$money->getAmount(), (string)$money->getCurrency()];
     }
 
     /**
@@ -69,7 +69,7 @@ class ValueHelper
     public static function moneyToInt(Money|int|null $money): ?int
     {
         if ($money instanceof Money) {
-            return (int) $money->getAmount();
+            return (int)$money->getAmount();
         }
 
         return $money;
@@ -85,7 +85,7 @@ class ValueHelper
             return [null, null];
         }
 
-        return [(int) $value->getAmount(),  $value->getUnit() ? (string) $value->getUnit() : null];
+        return [(int)$value->getAmount(), $value->getUnit() ? (string)$value->getUnit() : null];
     }
 
     /**
@@ -95,7 +95,7 @@ class ValueHelper
     public static function valueToInt(Value|int|null $value): ?int
     {
         if ($value instanceof Money) {
-            return (int) $value->getAmount();
+            return (int)$value->getAmount();
         }
 
         return $value;
@@ -128,8 +128,8 @@ class ValueHelper
             return null;
         }
 
-        $multipier = pow(10,$precision);
-        return new Value((int) round($amount * $multipier), $unit, $precision);
+        $multipier = pow(10, $precision);
+        return new Value((int)round($amount * $multipier), $unit, $precision);
     }
 
     /**
@@ -144,17 +144,27 @@ class ValueHelper
             return null;
         }
 
-        $iso4217 = new ISO4217();
+        $precision = self::getCurrencyPrecision($currencyIsoCode);
+        $multipier = pow(10, $precision);
+        $currency = new Currency($currencyIsoCode);
 
-        $result = $iso4217->getByAlpha3('EUR');
+        return new Money((int)round($amount * $multipier), $currency);
+    }
+
+    /**
+     * @param string $currencyIsoCode
+     * @return int
+     * @throws \Exception
+     */
+    public static function getCurrencyPrecision(string $currencyIsoCode): int
+    {
+        $iso4217 = new ISO4217();
+        $result = $iso4217->getByAlpha3($currencyIsoCode);
 
         if (!isset($result['exp'])) {
             throw new \Exception('Missing currency exp');
         }
 
-        $currency = new Currency($currencyIsoCode);
-
-        $multipier = pow(10, $result['exp']);
-        return new Money((int) round($amount * $multipier), $currency);
+        return (int)$result['exp'];
     }
 }
