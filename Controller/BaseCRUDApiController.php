@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace LSB\UtilityBundle\Controller;
 
-use App\Security\Voter\Product\AppProductVoter;
 use Knp\Component\Pager\PaginatorInterface;
 use LSB\UtilityBundle\Manager\ManagerInterface;
 use LSB\UtilityBundle\Security\BaseObjectVoter;
@@ -129,7 +128,7 @@ abstract class BaseCRUDApiController extends BaseApiController
     {
         $object = $this->getObject($uuid, false);
 
-        $this->denyAccessUnlessGranted(AppProductVoter::ACTION_POST, $this->manager->getVoterSubject($object, $this->getAppCode()));
+        $this->denyAccessUnlessGranted(BaseObjectVoter::ACTION_POST, $this->manager->getVoterSubject($object, $this->getAppCode()));
         return $this->serializeResponse($this->handleEntityRequest($request, $this->manager, $object), Response::HTTP_NO_CONTENT);
     }
 
@@ -143,7 +142,7 @@ abstract class BaseCRUDApiController extends BaseApiController
     {
         $object = $this->getObject($uuid, true);
 
-        $this->denyAccessUnlessGranted(AppProductVoter::ACTION_PATCH, $this->manager->getVoterSubject($object, $this->getAppCode()));
+        $this->denyAccessUnlessGranted(BaseObjectVoter::ACTION_PATCH, $this->manager->getVoterSubject($object, $this->getAppCode()));
         return $this->serializeResponse($this->handleEntityRequest($request, $this->manager, $object), Response::HTTP_NO_CONTENT);
     }
 
@@ -153,7 +152,7 @@ abstract class BaseCRUDApiController extends BaseApiController
     public function deleteAction(string $uuid): void
     {
         $object = $this->getObject($uuid, true);
-        $this->denyAccessUnlessGranted(AppProductVoter::ACTION_DELETE, $this->manager->getVoterSubject($object, $this->getAppCode()));
+        $this->denyAccessUnlessGranted(BaseObjectVoter::ACTION_DELETE, $this->manager->getVoterSubject($object, $this->getAppCode()));
         $this->manager->doRemove($object);
     }
 }
