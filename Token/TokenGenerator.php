@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace LSB\UtilBundle\Service;
+namespace LSB\UtilityBundle\Token;
 
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 use LSB\UserBundle\Entity\User;

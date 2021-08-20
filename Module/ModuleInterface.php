@@ -11,9 +11,6 @@ interface ModuleInterface
 {
     const ADDITIONAL_NAME_DEFAULT = 'default';
 
-    /**
-     * @return string
-     */
     public function getName(): string;
 
     public function getAdditionalName(): string;

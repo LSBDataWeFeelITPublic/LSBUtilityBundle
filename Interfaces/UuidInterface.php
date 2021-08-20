@@ -19,4 +19,10 @@ interface UuidInterface extends IdInterface, \Stringable
      * @return string
      */
     public function getUuid(): string;
+
+    /**
+     * @param bool $force
+     * @return string
+     */
+    public function generateUuid(bool $force = false): string;
 }

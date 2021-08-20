@@ -11,6 +11,8 @@ use LSB\UtilityBundle\Module\ModuleInterface;
  */
 abstract class BaseModuleInventory implements ModuleInventoryInterface
 {
+    const ADD_MODULE_METHOD = 'addModule';
+
     protected array $modules = [];
 
     /**
@@ -44,7 +46,7 @@ abstract class BaseModuleInventory implements ModuleInventoryInterface
                 }
             }
 
-            return $this->modules[$moduleName];
+            //return $this->modules[$moduleName];
         }
 
         if ($throwException) {
@@ -56,14 +58,14 @@ abstract class BaseModuleInventory implements ModuleInventoryInterface
 
     /**
      * @param string $className
-     * @param string $subname
+     * @param string $additionalName
      * @param bool $throwException
      * @return ModuleInterface|null
      * @throws \Exception
      */
     public function getModuleByClass(
         string $className,
-        string $subname = ModuleInterface::ADDITIONAL_NAME_DEFAULT,
+        string $additionalName = ModuleInterface::ADDITIONAL_NAME_DEFAULT,
         bool $throwException = true
     ): ?ModuleInterface {
         /**

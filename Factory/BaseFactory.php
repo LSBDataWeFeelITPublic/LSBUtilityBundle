@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace LSB\UtilityBundle\Factory;
 
 use LSB\UtilityBundle\Application\AppCodeTrait;
+use LSB\UtilityBundle\Interfaces\UuidInterface;
 
 /**
  * Class Factory
@@ -31,7 +32,13 @@ abstract class BaseFactory implements FactoryInterface
      */
     public function createNew(): object
     {
-        return new $this->className();
+        $object = new $this->className();
+
+        if ($object instanceof UuidInterface) {
+            $object->generateUuid();
+        }
+
+        return $object;
     }
 
     /**
