@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace LSB\UtilityBundle\Manager;
 
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\UnitOfWork;
 use Doctrine\Persistence\ObjectRepository;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
@@ -37,9 +38,7 @@ class ObjectManager implements ObjectManagerInterface
     }
 
     /**
-     * Persist
-     *
-     * @param $object
+     * @param object $object
      */
     public function persist(object $object): void
     {
@@ -48,7 +47,7 @@ class ObjectManager implements ObjectManagerInterface
 
     /**
      * @param object $object
-     * @return array
+     * @return iterable
      */
     public function validate(object $object): iterable
     {
@@ -56,9 +55,7 @@ class ObjectManager implements ObjectManagerInterface
     }
 
     /**
-     * Remove
-     *
-     * @param $object
+     * @param object $object
      */
     public function remove(object $object): void
     {
@@ -66,18 +63,23 @@ class ObjectManager implements ObjectManagerInterface
     }
 
     /**
-     * Persist
-     *
      * @param object $object
-     * @return object
      */
-    public function refresh(object $object): object
+    public function refresh(object $object): void
     {
-        return $this->em->refresh($object);
+        $this->em->refresh($object);
     }
 
     /**
-     * Flush
+     * @return UnitOfWork
+     */
+    public function getUnitOfWork(): UnitOfWork
+    {
+        return $this->em->getUnitOfWork();
+    }
+
+    /**
+     *
      */
     public function flush(): void
     {

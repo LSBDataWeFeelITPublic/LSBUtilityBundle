@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace LSB\UtilityBundle\Manager;
 
+use Doctrine\ORM\UnitOfWork;
 use Doctrine\Persistence\ObjectRepository;
 use LSB\UtilityBundle\Repository\RepositoryInterface;
 
@@ -42,7 +43,12 @@ interface ObjectManagerInterface
      *
      * @param object $object
      */
-    public function refresh(object $object): object;
+    public function refresh(object $object): void;
+
+    /**
+     * @return UnitOfWork
+     */
+    public function getUnitOfWork(): UnitOfWork;
 
     /**
      * Get repository by FQCN

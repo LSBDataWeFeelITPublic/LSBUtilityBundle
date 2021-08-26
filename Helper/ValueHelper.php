@@ -107,7 +107,7 @@ class ValueHelper
      * @param int $precision
      * @return Value|null
      */
-    public static function intToValue(?int $amount, ?string $unit, int $precision = 2): ?Value
+    public static function intToValue(?int $amount, ?string $unit = null, int $precision = 2): ?Value
     {
         if ($amount === null) {
             return null;
@@ -144,6 +144,12 @@ class ValueHelper
             return null;
         }
 
+        if ($amount instanceof Money) {
+            $amount = (int) $amount->getAmount();
+        } elseif ($amount instanceof Value) {
+            $amount = (int) $amount->getAmount();
+        }
+
         $precision = self::getCurrencyPrecision($currencyIsoCode);
         $multipier = pow(10, $precision);
         $currency = new Currency($currencyIsoCode);
@@ -166,5 +172,14 @@ class ValueHelper
         }
 
         return (int)$result['exp'];
+    }
+
+    /**
+     * @param int $precision
+     * @return int
+     */
+    public static function get100Percents(int $precision): int
+    {
+        return (int) pow(100, $precision);
     }
 }
