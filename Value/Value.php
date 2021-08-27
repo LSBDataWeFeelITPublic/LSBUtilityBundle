@@ -247,4 +247,63 @@ class Value
 
         return BcMathCalculator::round($amount, $roundingMode);
     }
+
+    /**
+     * @param Value $other
+     * @return bool
+     * @throws \Exception
+     */
+    public function equals(Value $other): bool
+    {
+        if ($this->unit != $other->unit) {
+            return false;
+        }
+
+        if ($this->amount === $other->amount) {
+            return true;
+        }
+
+        return $this->compare($other) === 0;
+    }
+
+    /**
+     * @param Value $other
+     * @return int
+     * @throws \Exception
+     */
+    public function compare(Value $other): int
+    {
+        // Note: non-strict equality is intentional here, since `Currency` is `final` and reliable.
+        if ($this->unit != $other->unit) {
+            throw new \Exception('Currencies must be identical');
+        }
+
+        return BcMathCalculator::compare($this->amount, $other->amount);
+    }
+
+    /**
+     * Checks whether the value represented by this object is greater than the other.
+     */
+    public function greaterThan(Value $other): bool
+    {
+        return $this->compare($other) > 0;
+    }
+
+    public function greaterThanOrEqual(Value $other): bool
+    {
+        return $this->compare($other) >= 0;
+    }
+
+    /**
+     * Checks whether the value represented by this object is less than the other.
+     */
+    public function lessThan(Value $other): bool
+    {
+        return $this->compare($other) < 0;
+    }
+
+    public function lessThanOrEqual(Value $other): bool
+    {
+        return $this->compare($other) <= 0;
+    }
 }
