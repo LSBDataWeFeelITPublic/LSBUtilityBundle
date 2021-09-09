@@ -1,15 +1,11 @@
 <?php
+declare(strict_types=1);
 
 namespace LSB\UtilityBundle\Value;
 
 use Money\Calculator\BcMathCalculator;
-use Money\Money;
 
-/**
- * Class IntValue
- * @package LSB\UtilityBundle\Value
- */
-class Value
+final class Value
 {
     const UNIT_PCS = 'pcs';
     const UNIT_PERCENTAGE = '%';
@@ -53,6 +49,14 @@ class Value
         $this->precision = $precision;
     }
 
+    /**
+     * @return static
+     */
+    public static function createZero(): self
+    {
+        return new self(0);
+    }
+
 //    /**
 //     * @param int $amount
 //     * @param string|null $unit
@@ -73,6 +77,13 @@ class Value
 //        return new self($amount, $unit, 2);
 //    }
 
+    /**
+     * @return bool
+     */
+    public function isZero(): bool
+    {
+        return BcMathCalculator::compare($this->amount, '0') === 0;
+    }
 
     /**
      * @return int
@@ -172,14 +183,9 @@ class Value
     }
 
     /**
-     * Returns a new Money object that represents
-     * the difference of this and an other Money object.
-     *
      * @param Value ...$subtrahends
-     *
      * @return Value
      * @throws \Exception
-     * @psalm-pure
      */
     public function subtract(Value ...$subtrahends): Value
     {
@@ -187,8 +193,8 @@ class Value
 
         foreach ($subtrahends as $subtrahend) {
             // Note: non-strict equality is intentional here, since `Currency` is `final` and reliable.
-            if ($this->unit != $subtrahend->unit || $this->precision != $subtrahend->unit) {
-                throw new \Exception('Currencies must be identical');
+            if ($this->unit != $subtrahend->unit || $this->precision != $subtrahend->precision) {
+                throw new \Exception('Unit must be identical');
             }
 
             $amount = BcMathCalculator::subtract($amount, $subtrahend->amount);
@@ -230,10 +236,9 @@ class Value
     }
 
     /**
-     * @psalm-param numeric-string $amount
-     * @psalm-param self::ROUND_* $roundingMode
-     *
-     * @psalm-return numeric-string
+     * @param string $amount
+     * @param int $roundingMode
+     * @return string
      */
     private function round(string $amount, int $roundingMode): string
     {

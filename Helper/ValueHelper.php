@@ -117,12 +117,12 @@ class ValueHelper
     }
 
     /**
-     * @param $amount
+     * @param int|float|null $amount
      * @param string|null $unit
      * @param int $precision
      * @return Value|null
      */
-    public static function convertToValue($amount, ?string $unit = null, int $precision = 2): ?Value
+    public static function convertToValue(int|float|null $amount, ?string $unit = null, int $precision = 2): ?Value
     {
         if ($amount === null) {
             return null;
@@ -181,5 +181,23 @@ class ValueHelper
     public static function get100Percents(int $precision): int
     {
         return (int) pow(100, $precision);
+    }
+
+    /**
+     * @return Value
+     */
+    public static function createValueZero(): Value
+    {
+        return new Value(0);
+    }
+
+    /**
+     * @param string $currencyIsoCode
+     * @return Money
+     */
+    public static function createMoneyZero(string $currencyIsoCode): Money
+    {
+        $currency = new Currency($currencyIsoCode);
+        return new Money(0, $currency);
     }
 }
