@@ -285,6 +285,19 @@ abstract class BaseManager implements ManagerInterface
      * @return string
      * @throws \Exception
      */
+    public function getResourceEntityInterface(): string
+    {
+        if (isset($this->resourceConfiguration[BE::CONFIG_KEY_CLASSES][BE::CONFIG_KEY_INTERFACE])) {
+            return (string)$this->resourceConfiguration[BE::CONFIG_KEY_CLASSES][BE::CONFIG_KEY_INTERFACE];
+        }
+
+        throw new \Exception('Resource: Entity FQCN is not set.');
+    }
+
+    /**
+     * @return string
+     * @throws \Exception
+     */
     public function getResourceVoterSubjectClass(): string
     {
         if ($this->getAppCode()
