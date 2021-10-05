@@ -159,27 +159,59 @@ abstract class BaseManagerResourcePass implements CompilerPassInterface
         );
 
         if ($resourceConfiguration->getFactoryDefinition()) {
-            $this->setFactoryArguments($appContextCode, $resourceConfiguration->getFactoryDefinition(), $resourceConfiguration->getEntityClass());
+            $this->setFactoryArguments(
+                $appContextCode,
+                $resourceConfiguration->getFactoryDefinition(),
+                $resourceConfiguration->getEntityClass()
+            );
         }
 
         if ($resourceConfiguration->getRepositoryDefinition()) {
-            $this->setRepositoryArguments($appContextCode, $resourceConfiguration->getRepositoryDefinition(), $resourceConfiguration->getEntityClass());
+            $this->setRepositoryArguments(
+                $appContextCode,
+                $resourceConfiguration->getRepositoryDefinition(),
+                $resourceConfiguration->getEntityClass()
+            );
         }
 
         if ($resourceConfiguration->getFormDefinition()) {
-            $this->setFormArguments($appContextCode, $resourceConfiguration->getFormDefinition(), $useMethodCalls, $resourceConfiguration->getEntityClass(), $translationDomain);
+            $this->setFormArguments(
+                $appContextCode,
+                $resourceConfiguration->getFormDefinition(),
+                $useMethodCalls,
+                $resourceConfiguration->getEntityClass(),
+                $translationDomain
+            );
         }
 
         if ($resourceConfiguration->getFormClass()) {
-            $this->setFormParentsArguments($container, $resourceConfiguration->getFormClass(), $useMethodCalls, $resourceConfiguration->getEntityClass(), $translationDomain);
+            $this->setFormParentsArguments(
+                $container,
+                $resourceConfiguration->getFormClass(),
+                $useMethodCalls,
+                $resourceConfiguration->getEntityClass(),
+                $translationDomain
+            );
         }
 
         if ($resourceConfiguration->getTranslationFormDefinition()) {
-            $this->setFormArguments($appContextCode, $resourceConfiguration->getTranslationFormDefinition(), $useMethodCalls, $resourceConfiguration->getEntityClass(), $translationDomain);
+            $this->setFormArguments(
+                $appContextCode,
+                $resourceConfiguration->getTranslationFormDefinition(),
+                $useMethodCalls,
+                $resourceConfiguration->getTranslationEntityClass(),
+                $translationDomain
+            );
         }
 
         if ($resourceConfiguration->getTranslationFormClass()) {
-            $this->setFormParentsArguments($container, $resourceConfiguration->getTranslationFormClass(), $useMethodCalls, $resourceConfiguration->getEntityClass(), $translationDomain);
+            $this->setFormParentsArguments(
+                $container,
+                $resourceConfiguration->getTranslationFormClass(),
+                $useMethodCalls,
+                $resourceConfiguration->getTranslationEntityClass(),
+                $translationDomain
+            );
         }
     }
 
