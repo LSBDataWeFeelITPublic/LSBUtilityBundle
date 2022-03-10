@@ -16,6 +16,7 @@ use Symfony\Component\DependencyInjection\Loader;
  */
 abstract class BaseExtension extends Extension
 {
+    const CONFIG_GLOBAL_RESOURCES_PREFIX='lsb_bundle_resources';
     const CONFIG_PREFIX = 'lsb_bundle_def';
     const DOT = '.';
 

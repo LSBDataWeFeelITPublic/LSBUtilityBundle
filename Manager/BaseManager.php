@@ -190,6 +190,14 @@ abstract class BaseManager implements ManagerInterface
     /**
      * @inheritDoc
      */
+    public function createNewFromDTO($inputDTO): object
+    {
+        return $this->factory->createNew();
+    }
+
+    /**
+     * @inheritDoc
+     */
     public function doPersist(object $object, bool $throwException = true): bool
     {
         try {

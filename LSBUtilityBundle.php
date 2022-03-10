@@ -2,13 +2,18 @@
 
 namespace LSB\UtilityBundle;
 
+use LSB\UtilityBundle\DependencyInjection\Compiler\AddManagerPass;
+use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\HttpKernel\Bundle\Bundle;
 
-/**
- * Class LSBUtilityBundle
- * @package LSB\UtilBundle
- */
 class LSBUtilityBundle extends Bundle
 {
+    public function build(ContainerBuilder $builder)
+    {
+        parent::build($builder);
 
+        $builder
+            ->addCompilerPass(new AddManagerPass())
+        ;
+    }
 }

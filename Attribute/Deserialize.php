@@ -10,12 +10,34 @@ use Attribute;
  *
  * @since 8.0
  */
-#[Attribute(Attribute::TARGET_CLASS)]
+#[Attribute(Attribute::TARGET_ALL)]
 class Deserialize
 {
     const TYPE_MANUAL = 1;
     const TYPE_JMS = 2;
     const TYPE_DATATRANSFORMER = 3;
 
-    public function __construct(public ?int $type) {}
+    const EXCEPTION_CATCH = false;
+    const EXCEPTION_THROW = true;
+
+    public function __construct(
+        protected ?int $type,
+        protected bool $throwException = false
+    ) {}
+
+    /**
+     * @return int|null
+     */
+    public function getType(): ?int
+    {
+        return $this->type;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isThrowException(): bool
+    {
+        return $this->throwException;
+    }
 }

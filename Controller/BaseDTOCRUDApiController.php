@@ -9,13 +9,7 @@ use LSB\UtilityBundle\Security\BaseObjectVoter;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-/**
- * FORM based solution
- *
- * Class BaseCRUDApiController
- * @package LSB\UtilityBundle\Controller
- */
-abstract class BaseCRUDApiController extends BaseApiController
+abstract class BaseDTOCRUDApiController extends BaseApiController
 {
 
     const CONTROLLER_NAMESPACE = 'Controller';

@@ -15,6 +15,8 @@ use LSB\UtilityBundle\Security\VoterSubjectInterface;
  */
 interface ManagerInterface extends ApplicationContextInterface
 {
+    const MANAGER_TAG = 'entity.manager';
+
     /**
      * @return ObjectManagerInterface
      */
@@ -70,6 +72,12 @@ interface ManagerInterface extends ApplicationContextInterface
      * @return object
      */
     public function createNew(): object;
+
+    /**
+     * @param $inputDTO
+     * @return object
+     */
+    public function createNewFromDTO($inputDTO): object;
 
     /**
      * @return array

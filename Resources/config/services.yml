@@ -9,7 +9,17 @@ services:
 
     LSB\UtilityBundle\Manager\ObjectManagerInterface: '@LSB\UtilityBundle\Manager\ObjectManager'
 
+    lsb_utility.manager.container:
+        class: 'LSB\UtilityBundle\Service\ManagerContainer'
+
+    LSB\UtilityBundle\Service\ManagerContainerInterface: '@lsb_utility.manager.container'
+
     LSB\UtilityBundle\Form\EntityLazyType:
         arguments: ['@LSB\UtilityBundle\Manager\ObjectManager']
         tags:
             - { name: form.type }
+
+    lsb_utility.jms.serializer.existing_object_constructor:
+        class: 'LSB\UtilityBundle\Serializer\ObjectConstructor\ExistingObjectConstructor'
+        arguments:
+            - '@jms_serializer.unserialize_object_constructor'
