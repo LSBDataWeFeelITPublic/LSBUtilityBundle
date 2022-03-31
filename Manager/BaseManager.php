@@ -3,15 +3,22 @@ declare(strict_types=1);
 
 namespace LSB\UtilityBundle\Manager;
 
+use App\DTO\DataTransformer\Input\EntityConverter;
 use Knp\DoctrineBehaviors\Contract\Entity\TranslatableInterface;
 use LSB\NotificationBundle\Entity\Notification;
 use LSB\UtilityBundle\Application\AppCodeTrait;
+use LSB\UtilityBundle\DTO\Model\Input\InputDTOInterface;
+use LSB\UtilityBundle\DTO\Model\Output\OutputDTOInterface;
+use LSB\UtilityBundle\DTO\Request\RequestAttributes;
+use LSB\UtilityBundle\DTO\Request\RequestIdentifier;
 use LSB\UtilityBundle\Exception\ObjectManager\ValidationException;
 use LSB\UtilityBundle\Factory\FactoryInterface;
 use LSB\UtilityBundle\Form\BaseEntityType;
+use LSB\UtilityBundle\Interfaces\UuidInterface;
 use LSB\UtilityBundle\Repository\RepositoryInterface;
 use LSB\UtilityBundle\DependencyInjection\BaseExtension as BE;
 use LSB\UtilityBundle\Security\VoterSubjectInterface;
+use ReflectionClass;
 use Symfony\Component\Form\AbstractType;
 use LSB\UtilityBundle\Exception\ObjectManager\DoRemoveException;
 use LSB\UtilityBundle\Exception\ObjectManager\DoPersistException;
@@ -190,14 +197,6 @@ abstract class BaseManager implements ManagerInterface
     /**
      * @inheritDoc
      */
-    public function createNewFromDTO($inputDTO): object
-    {
-        return $this->factory->createNew();
-    }
-
-    /**
-     * @inheritDoc
-     */
     public function doPersist(object $object, bool $throwException = true): bool
     {
         try {
@@ -366,5 +365,134 @@ abstract class BaseManager implements ManagerInterface
         }
 
         return null;
+    }
+
+    /**
+     * Do przeniesienia do Base
+     *
+     * @param $inputDTO
+     * @return object
+     * @throws \Exception
+     */
+    public function createNewFromDTO($inputDTO): object
+    {
+        if (!$inputDTO->isValid()) {
+            throw new \Exception('DTO is invalid. Unable to create new object.');
+        }
+
+        $object = $this->factory->createNew();
+
+        $entityConverter = new EntityConverter();
+        $entityConverter->populateEntityWithDTO($inputDTO, $object);
+
+        $this->getObjectManager()->persist($object);
+        $this->getObjectManager()->flush();
+
+        return $object;
+    }
+
+    /**
+     * Do przeniesienia do Base
+     *
+     * @param $inputDTO
+     * @return object
+     * @throws \Exception
+     */
+    public function updateFromDTO($inputDTO): object
+    {
+        if (!$inputDTO->isValid()) {
+            throw new \Exception('DTO is invalid. Unable to create new object.');
+        }
+
+        $object = $inputDTO->getEntity();
+
+        $entityConverter = new EntityConverter();
+
+        $entityConverter->populateEntityWithDTO($inputDTO, $object);
+        //Persist is required
+        $this->getObjectManager()->persist($object);
+        $this->getObjectManager()->flush();
+
+        return $object;
+    }
+
+    /**
+     * @param \LSB\UtilityBundle\DTO\Model\Output\OutputDTOInterface $outputDTO
+     * @param object $entity
+     * @return \LSB\UtilityBundle\DTO\Model\Output\OutputDTOInterface
+     */
+    public function generateOutputDTO(OutputDTOInterface $outputDTO, object $entity): OutputDTOInterface
+    {
+        $entityConverter = new EntityConverter();
+        $entityConverter->populateDtoWithEntity($entity, $outputDTO);
+
+        return $outputDTO;
+    }
+
+    /**
+     * At this stage, we populate the empty DTO object with data from the entity, create the default content of the DTO object, on which we will later overlay the data from the user
+     *
+     * @throws \ReflectionException
+     * @throws \Exception
+     */
+    public function prepareInputDTO(
+        RequestIdentifier $requestIdentifier,
+        InputDTOInterface $requestDTO,
+        bool $populate = true,
+        bool $createNewObject = false
+    ): InputDTOInterface {
+        $idName = $requestIdentifier->getIdentifierName();
+        $id = $requestIdentifier->getValue();
+        $entityClass = $this->getResourceEntityClass();
+
+        $reflectionClass = new ReflectionClass($entityClass);
+
+        if ($reflectionClass->implementsInterface(UuidInterface::class)
+            && $idName === RequestAttributes::IDENTIFIER_ATTRIBUTE_UUID
+            && !is_numeric($id)
+        ) {
+            $object = $this->getByUuid($id);
+        } else {
+            $object = $this->getById($id);
+        }
+
+        //Verify object class
+        if (!$createNewObject && !$object instanceof $entityClass) {
+            throw new \Exception('Object does not exist.');
+        } elseif ($createNewObject && !$object instanceof $entityClass) {
+            $object = $this->factory->createNew();
+        }
+
+        if ($populate) {
+            $entityConverter = new EntityConverter();
+            $entityConverter->populateDtoWithEntity($object, $requestDTO);
+        }
+
+        $requestDTO->setEntity($object);
+
+        return $requestDTO;
+    }
+
+    /**
+     * @param object $object
+     * @param \LSB\UtilityBundle\DTO\Model\Output\OutputDTOInterface $requestDTO
+     * @param bool $populate
+     * @return \LSB\UtilityBundle\DTO\Model\Output\OutputDTOInterface
+     */
+    public function prepareOutputDTO(
+        object $object,
+        OutputDTOInterface $requestDTO,
+        bool $populate = true
+    ): OutputDTOInterface {
+
+        if ($populate) {
+            $entityConverter = new EntityConverter();
+            $entityConverter->populateDtoWithEntity($object, $requestDTO);
+        }
+
+        //The entity will be used later.
+        $requestDTO->setEntity($object);
+
+        return $requestDTO;
     }
 }

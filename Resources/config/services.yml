@@ -23,3 +23,21 @@ services:
         class: 'LSB\UtilityBundle\Serializer\ObjectConstructor\ExistingObjectConstructor'
         arguments:
             - '@jms_serializer.unserialize_object_constructor'
+
+    ### DTO
+
+    LSB\UtilityBundle\DTO\Resource\ResourceHelper:
+        arguments:
+            - '@lsb_utility.manager.container'
+
+    lsb_utility.dto.resource.helper:
+        alias: 'LSB\UtilityBundle\DTO\Resource\ResourceHelper'
+
+
+    LSB\UtilityBundle\DTO\Resolver\APIRequestResolver:
+        arguments:
+            - '@validator'
+            - '@jms_serializer'
+        tags:
+            - { name: controller.argument_value_resolver }
+
