@@ -3,10 +3,9 @@ declare(strict_types=1);
 
 namespace LSB\UtilityBundle\Manager;
 
-use App\DTO\DataTransformer\Input\EntityConverter;
 use Knp\DoctrineBehaviors\Contract\Entity\TranslatableInterface;
-use LSB\NotificationBundle\Entity\Notification;
 use LSB\UtilityBundle\Application\AppCodeTrait;
+use LSB\UtilityBundle\DTO\DataTransformer\EntityConverter;
 use LSB\UtilityBundle\DTO\Model\Input\InputDTOInterface;
 use LSB\UtilityBundle\DTO\Model\Output\OutputDTOInterface;
 use LSB\UtilityBundle\DTO\Request\RequestAttributes;
@@ -22,7 +21,6 @@ use ReflectionClass;
 use Symfony\Component\Form\AbstractType;
 use LSB\UtilityBundle\Exception\ObjectManager\DoRemoveException;
 use LSB\UtilityBundle\Exception\ObjectManager\DoPersistException;
-use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Webmozart\Assert\Assert;
 
 /**
