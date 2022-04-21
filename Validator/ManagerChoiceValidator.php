@@ -40,7 +40,7 @@ class ManagerChoiceValidator extends ConstraintValidator
 
             if (method_exists($manager, $constraint->method)) {
                 $method = $constraint->method;
-                $choices = $manager->$method();
+                $choices = $manager->$method($value, $constraint->payload);
             } else {
                 throw new ConstraintDefinitionException(sprintf('Method %s does not exist in %s.', $constraint->method, $constraint->manager));
             }
