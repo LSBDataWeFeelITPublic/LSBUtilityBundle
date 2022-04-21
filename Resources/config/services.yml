@@ -26,6 +26,17 @@ services:
 
     ### DTO
 
+    LSB\UtilityBundle\DTO\DTOService:
+        arguments:
+            - '@lsb_utility.manager.container'
+            - '@lsb_utility.dto.data_transformer.service'
+            - '@security.authorization_checker'
+            - '@knp_paginator'
+            - '@lsb_utility.dto.resource.helper'
+
+    lsb_utility.dto.service:
+        alias: 'LSB\UtilityBundle\DTO\DTOService'
+
     LSB\UtilityBundle\DTO\Resource\ResourceHelper:
         arguments:
             - '@lsb_utility.manager.container'
@@ -41,3 +52,40 @@ services:
         tags:
             - { name: controller.argument_value_resolver }
 
+    LSB\UtilityBundle\DTO\DataTransformer\DataTransformerModuleInventory: ~
+
+    lsb_utility.dto.data_transformer.module.inventory:
+        alias: 'LSB\UtilityBundle\DTO\DataTransformer\DataTransformerModuleInventory'
+
+    LSB\UtilityBundle\DTO\DataTransformer\DataTransformerModuleService:
+        arguments:
+            - '@lsb_utility.dto.data_transformer.module.inventory'
+
+    lsb_utility.dto.data_transformer.module.service:
+        alias: 'LSB\UtilityBundle\DTO\DataTransformer\DataTransformerModuleService'
+
+    LSB\UtilityBundle\DTO\DataTransformer\DataTransformerService:
+        arguments:
+            - '@lsb_utility.dto.data_transformer.module.service'
+
+    lsb_utility.dto.data_transformer.service: '@LSB\UtilityBundle\DTO\DataTransformer\DataTransformerService'
+
+
+    ### Validator
+    LSB\UtilityBundle\Validator\ManagerChoiceValidator:
+        arguments:
+            - '@lsb_utility.manager.container'
+        tags:
+            - { name: validator.constraint_validator }
+
+    LSB\UtilityBundle\Validator\ManagerUniqueEntityValidator:
+        arguments:
+            - '@lsb_utility.manager.container'
+        tags:
+            - { name: validator.constraint_validator }
+
+    LSB\UtilityBundle\Validator\ManagerCallbackValidator:
+        arguments:
+            - '@lsb_utility.manager.container'
+        tags:
+            - { name: validator.constraint_validator }

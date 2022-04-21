@@ -7,8 +7,8 @@ use Attribute;
 #[Attribute(Attribute::TARGET_ALL)]
 class Resource
 {
-    const TYPE_DESERIALIZE = 1;
-    const TYPE_DATATRANSFORMER = 2;
+    const TYPE_AUTO = 1;
+    const TYPE_DATA_TRANSFORMER = 2;
 
     public function __construct(
         protected ?string $entityClass = null,
@@ -16,7 +16,12 @@ class Resource
         protected ?string $inputCreateDTOClass = null,
         protected ?string $inputUpdateDTOClass = null,
         protected ?string $outputDTOClass = null,
-        protected ?int    $deserializationType = self::TYPE_DESERIALIZE
+        protected ?int    $deserializationType = self::TYPE_AUTO,
+        protected ?int    $collectionItemDeserializationType = self::TYPE_AUTO,
+        protected ?bool   $isDisabled = null,
+        protected ?bool   $isCollection = null,
+        protected ?string $collectionOutputDTOClass = null,
+        protected ?string $collectionItemOutputDTOClass = null
     ) {
     }
 
@@ -116,6 +121,42 @@ class Resource
     }
 
     /**
+     * @return bool|null
+     */
+    public function getIsDisabled(): ?bool
+    {
+        return $this->isDisabled;
+    }
+
+    /**
+     * @param bool|null $isDisabled
+     * @return Resource
+     */
+    public function setIsDisabled(?bool $isDisabled): Resource
+    {
+        $this->isDisabled = $isDisabled;
+        return $this;
+    }
+
+    /**
+     * @return bool|null
+     */
+    public function getIsCollection(): ?bool
+    {
+        return $this->isCollection;
+    }
+
+    /**
+     * @param bool|null $isCollection
+     * @return Resource
+     */
+    public function setIsCollection(?bool $isCollection): Resource
+    {
+        $this->isCollection = $isCollection;
+        return $this;
+    }
+
+    /**
      * @return int|null
      */
     public function getDeserializationType(): ?int
@@ -130,6 +171,60 @@ class Resource
     public function setDeserializationType(?int $deserializationType): Resource
     {
         $this->deserializationType = $deserializationType;
+        return $this;
+    }
+
+    /**
+     * @return string|null
+     */
+    public function getCollectionOutputDTOClass(): ?string
+    {
+        return $this->collectionOutputDTOClass;
+    }
+
+    /**
+     * @param string|null $collectionOutputDTOClass
+     * @return Resource
+     */
+    public function setCollectionOutputDTOClass(?string $collectionOutputDTOClass): Resource
+    {
+        $this->collectionOutputDTOClass = $collectionOutputDTOClass;
+        return $this;
+    }
+
+    /**
+     * @return int|null
+     */
+    public function getCollectionItemDeserializationType(): ?int
+    {
+        return $this->collectionItemDeserializationType;
+    }
+
+    /**
+     * @param int|null $collectionItemDeserializationType
+     * @return Resource
+     */
+    public function setCollectionItemDeserializationType(?int $collectionItemDeserializationType): Resource
+    {
+        $this->collectionItemDeserializationType = $collectionItemDeserializationType;
+        return $this;
+    }
+
+    /**
+     * @return string|null
+     */
+    public function getCollectionItemOutputDTOClass(): ?string
+    {
+        return $this->collectionItemOutputDTOClass;
+    }
+
+    /**
+     * @param string|null $collectionItemOutputDTOClass
+     * @return Resource
+     */
+    public function setCollectionItemOutputDTOClass(?string $collectionItemOutputDTOClass): Resource
+    {
+        $this->collectionItemOutputDTOClass = $collectionItemOutputDTOClass;
         return $this;
     }
 }

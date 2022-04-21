@@ -14,16 +14,20 @@ class RequestData
      * @param Resource|null $resource
      * @param array $serializationGroups
      * @param int|null $responseStatusCode
-     * @param object|null $entity
+     * @param object|null $object
+     * @param bool $isGranted
+     * @param bool $isObjectFetched
      */
     public function __construct(
         protected ?DTOInterface $inputDTO = null,
         protected ?DTOInterface $outputDTO = null,
         protected ?array        $outputData = null,
         protected ?Resource     $resource = null,
-        protected array $serializationGroups = [],
-        protected ?int $responseStatusCode = null,
-        protected ?object $entity = null
+        protected array         $serializationGroups = [],
+        protected ?int          $responseStatusCode = null,
+        protected ?object       $object = null,
+        protected bool          $isGranted = false,
+        protected bool          $isObjectFetched = false
     ) {
     }
 
@@ -138,18 +142,59 @@ class RequestData
     /**
      * @return object|null
      */
-    public function getEntity(): ?object
+    public function getObject(): ?object
     {
-        return $this->entity;
+        return $this->object;
     }
 
     /**
-     * @param object|null $entity
+     * @param object|null $object
      * @return RequestData
      */
-    public function setEntity(?object $entity): RequestData
+    public function setObject(?object $object): RequestData
     {
-        $this->entity = $entity;
+        $this->object = $object;
+
+        if ($object) {
+            $this->isObjectFetched = true;
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isGranted(): bool
+    {
+        return $this->isGranted;
+    }
+
+    /**
+     * @param bool $isGranted
+     * @return RequestData
+     */
+    public function setIsGranted(bool $isGranted): RequestData
+    {
+        $this->isGranted = $isGranted;
+        return $this;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isObjectFetched(): bool
+    {
+        return $this->isObjectFetched;
+    }
+
+    /**
+     * @param bool $isObjectFetched
+     * @return RequestData
+     */
+    public function setIsObjectFetched(bool $isObjectFetched): RequestData
+    {
+        $this->isObjectFetched = $isObjectFetched;
         return $this;
     }
 }

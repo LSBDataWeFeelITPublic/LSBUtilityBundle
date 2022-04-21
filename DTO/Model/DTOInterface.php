@@ -11,4 +11,6 @@ interface DTOInterface
     public function getEntity(): ?object;
 
     public function setEntity(?object $entity);
+
+    public function isValid(): bool;
 }

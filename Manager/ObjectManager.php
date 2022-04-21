@@ -95,4 +95,12 @@ class ObjectManager implements ObjectManagerInterface
     {
         return $this->em->getRepository($fqcn);
     }
+
+    /**
+     * @return \Doctrine\ORM\EntityManagerInterface
+     */
+    public function getEntityManager(): EntityManagerInterface
+    {
+        return $this->em;
+    }
 }

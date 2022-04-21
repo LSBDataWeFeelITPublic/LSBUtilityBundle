@@ -8,6 +8,7 @@ use LSB\UtilityBundle\Manager\ManagerInterface;
 use LSB\UtilityBundle\Security\BaseObjectVoter;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Webmozart\Assert\Assert;
 
 /**
  * FORM based solution
@@ -74,6 +75,12 @@ abstract class BaseCRUDApiController extends BaseApiController
      */
     protected function getObject(string $uuid, bool $throwException): ?object
     {
+        try {
+            Assert::uuid($uuid);
+        } catch (\Exception $e) {
+            throw $this->createNotFoundException("$this->entityFqcn with UUID: $uuid was not found.");
+        }
+
         $object = $this->manager->getRepository()->findOneBy(['uuid' => $uuid]);
 
         if ($object && !$object instanceof $this->entityFqcn || !$object && $throwException) {

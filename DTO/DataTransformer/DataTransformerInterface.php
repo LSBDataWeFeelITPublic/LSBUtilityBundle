@@ -1,10 +1,14 @@
 <?php
 
-namespace App\DTO\DataTransformer;
+namespace LSB\UtilityBundle\DTO\DataTransformer;
 
-interface DataTransformerInterface
+use LSB\UtilityBundle\Module\ModuleInterface;
+
+interface DataTransformerInterface extends ModuleInterface
 {
-    public function transform($object, string $to, array $context = []);
+    const TAG = 'lsb.dto.data_transformer';
+
+    public function transform($data, string $to, array $context = []);
 
     public function supportsTransformation($data, string $to, array $context = []): bool;
 }

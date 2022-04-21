@@ -46,25 +46,16 @@ class ResourceHelper
         }
 
         //Zczytanie atrybutów z kontrolera/klasy
-        try {
-            $reflectionClass = new ReflectionClass($methodData[0]);
-        } catch (\Exception $e) {
+
+        $controllerClass = $methodData[0];
+
+        $controllerResource = $this->getClassResource($controllerClass);
+
+        if (!$controllerResource) {
             return null;
         }
 
-        $controllerAttributes = $reflectionClass->getAttributes(Resource::class);
-
-        foreach ($controllerAttributes as $controllerAttribute) {
-            if ($controllerAttribute->getName() !== Resource::class) {
-                continue;
-            }
-
-            /**
-             * @var Resource $controllerResource
-             */
-            $controllerResource = $controllerAttribute->newInstance();
-            $manager = $this->managerContainer->getByManagerClass($controllerResource->getManagerClass());
-        }
+        $manager = $this->managerContainer->getByManagerClass($controllerResource->getManagerClass());
 
         $entityClass = null;
 
@@ -81,19 +72,7 @@ class ResourceHelper
 
         //We've got entity class
         //We fetch entity attributes.
-        $entityReflectionClass = new ReflectionClass($entityClass);
-        $entityAttributes = $entityReflectionClass->getAttributes(Resource::class);
-
-        /**
-         * @var Resource|null $entityResource
-         */
-        $entityResource = null;
-        foreach ($entityAttributes as $entityAttribute) {
-            if ($entityAttribute->getName() !== Resource::class) {
-                continue;
-            }
-            $entityResource = $entityAttribute->newInstance();
-        }
+        $entityResource = $this->getClassResource($entityClass);
 
         //Atrybuty encji, mając atrybut encji, mamy dostęp do obiektów DTO
         //Do rozwazenia budowa obiketu Resource na podstawie poszczegolnych atrybutow Resource
@@ -145,36 +124,73 @@ class ResourceHelper
     }
 
     /**
+     * @param string $class
+     * @return \LSB\UtilityBundle\Attribute\Resource|null
+     */
+    public function getClassResource(string $class): ?Resource
+    {
+        try {
+            $entityReflectionClass = new ReflectionClass($class);
+        } catch (\Exception $e) {
+            return null;
+        }
+
+        $classAttributes = $entityReflectionClass->getAttributes(Resource::class);
+
+        /**
+         * @var Resource|null $resource
+         */
+        $resource = null;
+        foreach ($classAttributes as $entityAttribute) {
+            if ($entityAttribute->getName() !== Resource::class) {
+                continue;
+            }
+            $resource = $entityAttribute->newInstance();
+        }
+
+        return $resource;
+    }
+
+    /**
      * @param Resource $LSresource
      * @param Resource $MSresource
      * @return Resource
      */
     public function mergeResource(Resource $LSresource, Resource $MSresource): Resource
     {
+
         return new Resource(
             $MSresource->getEntityClass() ?? $LSresource->getEntityClass(),
             $MSresource->getManagerClass() ?? $LSresource->getManagerClass(),
             $MSresource->getInputCreateDTOClass() ?? $LSresource->getInputCreateDTOClass(),
             $MSresource->getInputUpdateDTOClass() ?? $LSresource->getInputUpdateDTOClass(),
-            $MSresource->getOutputDTOClass() ?? $LSresource->getOutputDTOClass()
+            $MSresource->getOutputDTOClass() ?? $LSresource->getOutputDTOClass(),
+            $MSresource->getDeserializationType() ?? $LSresource->getDeserializationType(),
+            $MSresource->getCollectionItemDeserializationType() ?? $LSresource->getCollectionItemDeserializationType(),
+            $MSresource->getIsDisabled() ?? $LSresource->getIsDisabled(),
+            $MSresource->getIsCollection() ?? $LSresource->getIsCollection(),
+            $MSresource->getCollectionOutputDTOClass() ?? $LSresource->getCollectionOutputDTOClass(),
+            $MSresource->getCollectionItemOutputDTOClass() ?? $LSresource->getCollectionItemOutputDTOClass()
         );
     }
 
     /**
      * @param Resource $resource
-     * @param ManagerInterface $manager
+     * @param \LSB\UtilityBundle\Manager\ManagerInterface|null $manager
      * @return Resource
      */
-    public function updateResourceConfiguration(Resource $resource, ManagerInterface $manager): Resource
+    public function updateResourceConfiguration(Resource $resource, ?ManagerInterface $manager = null): Resource
     {
-        $entityClass = $manager->getResourceEntityClass();
-
-        if (!$resource->getEntityClass()) {
+        if (!$resource->getEntityClass() && $manager) {
             $resource->setEntityClass($manager->getResourceEntityClass());
         }
 
-        if (!$resource->getInputUpdateDTOClass()) {
+        if (!$resource->getInputUpdateDTOClass(false)) {
             $resource->setInputUpdateDTOClass($resource->getInputCreateDTOClass());
+        }
+
+        if (!$resource->getCollectionItemOutputDTOClass()) {
+            $resource->setCollectionItemOutputDTOClass($resource->getOutputDTOClass());
         }
 
         return $resource;

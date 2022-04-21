@@ -2,6 +2,7 @@
 
 namespace LSB\UtilityBundle;
 
+use LSB\UtilityBundle\DependencyInjection\Compiler\AddDataTransformerModulePass;
 use LSB\UtilityBundle\DependencyInjection\Compiler\AddManagerPass;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\HttpKernel\Bundle\Bundle;
@@ -14,6 +15,7 @@ class LSBUtilityBundle extends Bundle
 
         $builder
             ->addCompilerPass(new AddManagerPass())
+            ->addCompilerPass(new AddDataTransformerModulePass())
         ;
     }
 }

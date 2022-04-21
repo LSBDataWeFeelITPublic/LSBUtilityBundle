@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace LSB\UtilityBundle\Manager;
 
+use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\UnitOfWork;
 use Doctrine\Persistence\ObjectRepository;
 use LSB\UtilityBundle\Repository\RepositoryInterface;
@@ -57,4 +58,9 @@ interface ObjectManagerInterface
      * @return ObjectRepository|null
      */
     public function getRepository(string $fqcn): ?ObjectRepository;
+
+    /**
+     * @return \Doctrine\ORM\EntityManagerInterface
+     */
+    public function getEntityManager(): EntityManagerInterface;
 }
