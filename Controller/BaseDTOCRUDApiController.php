@@ -12,10 +12,6 @@ use Symfony\Component\HttpFoundation\Response;
 abstract class BaseDTOCRUDApiController extends BaseApiController
 {
 
-    const CONTROLLER_NAMESPACE = 'Controller';
-
-    const ACTION_GET = 'get';
-
     /**
      * @var ManagerInterface
      */
@@ -75,80 +71,5 @@ abstract class BaseDTOCRUDApiController extends BaseApiController
         }
 
         return $object;
-    }
-
-    /**
-     * @param string $uuid
-     * @return Response
-     */
-    public function getAction(string $uuid): Response
-    {
-        $object = $this->getObject($uuid, true);
-
-        $this->denyAccessUnlessGranted(BaseObjectVoter::ACTION_GET, $this->manager->getVoterSubject($object, $this->getAppCode()));
-        return $this->serializeResponse($object);
-    }
-
-    /**
-     * @param PaginatorInterface $paginator
-     * @param Request $request
-     * @return Response
-     */
-    public function cgetAction(PaginatorInterface $paginator, Request $request): Response
-    {
-        $this->denyAccessUnlessGranted(BaseObjectVoter::ACTION_CGET, $this->manager->getVoterSubject(null, $this->getAppCode()));
-        $result = $this->paginate($paginator, $this->manager->getRepository(), $request);
-        $this->checkCollection($result, BaseObjectVoter::ACTION_GET, $this->manager->getResourceVoterSubjectClass());
-        return $this->serializeResponse($result);
-    }
-
-    /**
-     * @param Request $request
-     * @return Response
-     * @throws \Exception
-     */
-    public function postAction(Request $request): Response
-    {
-        $this->denyAccessUnlessGranted(BaseObjectVoter::ACTION_POST, $this->manager->getVoterSubject(null, $this->getAppCode()));
-        $data = $this->handleEntityRequest($request, $this->manager);
-        return $this->serializePostActionResponse($data, $this->generateRoutingGet());
-    }
-
-    /**
-     * @param string|null $uuid
-     * @param Request $request
-     * @return Response
-     * @throws \Exception
-     */
-    public function putAction(?string $uuid, Request $request): Response
-    {
-        $object = $this->getObject($uuid, false);
-
-        $this->denyAccessUnlessGranted(BaseObjectVoter::ACTION_POST, $this->manager->getVoterSubject($object, $this->getAppCode()));
-        return $this->serializeResponse($this->handleEntityRequest($request, $this->manager, $object), Response::HTTP_NO_CONTENT);
-    }
-
-    /**
-     * @param string $uuid
-     * @param Request $request
-     * @return Response
-     * @throws \Exception
-     */
-    public function patchAction(string $uuid, Request $request): Response
-    {
-        $object = $this->getObject($uuid, true);
-
-        $this->denyAccessUnlessGranted(BaseObjectVoter::ACTION_PATCH, $this->manager->getVoterSubject($object, $this->getAppCode()));
-        return $this->serializeResponse($this->handleEntityRequest($request, $this->manager, $object), Response::HTTP_NO_CONTENT);
-    }
-
-    /**
-     * @param string $uuid
-     */
-    public function deleteAction(string $uuid): void
-    {
-        $object = $this->getObject($uuid, true);
-        $this->denyAccessUnlessGranted(BaseObjectVoter::ACTION_DELETE, $this->manager->getVoterSubject($object, $this->getAppCode()));
-        $this->manager->doRemove($object);
     }
 }

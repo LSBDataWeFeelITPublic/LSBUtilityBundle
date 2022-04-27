@@ -19,10 +19,6 @@ use Webmozart\Assert\Assert;
 abstract class BaseCRUDApiController extends BaseApiController
 {
 
-    const CONTROLLER_NAMESPACE = 'Controller';
-
-    const ACTION_GET = 'get';
-
     /**
      * @var ManagerInterface
      */

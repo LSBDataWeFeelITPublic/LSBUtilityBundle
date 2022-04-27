@@ -5,6 +5,8 @@ namespace LSB\UtilityBundle\Validator;
 use Symfony\Component\Validator\Constraint;
 
 /**
+ * With this constraint, you will be able to use the manager service to build a choice list for a specific property validation.
+ *
  * @Annotation
  * @Target({"PROPERTY"})
  */
@@ -26,6 +28,15 @@ class ManagerChoice extends Constraint
     public string $minMessage = 'You must select at least {{ limit }} choice.|You must select at least {{ limit }} choices.';
     public string $maxMessage = 'You must select at most {{ limit }} choice.|You must select at most {{ limit }} choices.';
 
+    /**
+     * {@inheritDoc}
+     *
+     * @param string $manager Manager class
+     * @param string $method Method name in manager class
+     * @param bool $multiple Multiple choices
+     * @param int|null $min Min count
+     * @param int|null $max Max count
+     */
     public function __construct(
         string $manager,
         string $method,

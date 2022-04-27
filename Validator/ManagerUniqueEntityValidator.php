@@ -180,7 +180,13 @@ class ManagerUniqueEntityValidator extends ConstraintValidator
             ->addViolation();
     }
 
-    private function formatWithIdentifiers(ObjectManager $em, ClassMetadata $class, $value)
+    /**
+     * @param \Doctrine\Persistence\ObjectManager $em
+     * @param \Doctrine\Persistence\Mapping\ClassMetadata $class
+     * @param $value
+     * @return string
+     */
+    private function formatWithIdentifiers(ObjectManager $em, ClassMetadata $class, $value): string
     {
         if (!\is_object($value) || $value instanceof \DateTimeInterface) {
             return $this->formatValue($value, self::PRETTY_DATE);

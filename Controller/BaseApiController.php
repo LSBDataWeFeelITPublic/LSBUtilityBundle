@@ -35,6 +35,10 @@ abstract class BaseApiController extends AbstractFOSRestController
 
     const DEFAULT_SERIALIZATION_GROUP = 'Api';
 
+    const CONTROLLER_NAMESPACE = 'Controller';
+
+    const ACTION_GET = 'get';
+
     /**
      * @param string|null $uuid
      */
@@ -274,7 +278,8 @@ abstract class BaseApiController extends AbstractFOSRestController
     /**
      * @param array $collection
      * @param string $actionName
-     * @return array
+     * @param string|null $voterSubjectClass
+     * @return void
      */
     protected function checkCollection(iterable $collection, string $actionName, ?string $voterSubjectClass): void
     {

@@ -4,14 +4,35 @@ namespace LSB\UtilityBundle\Attribute;
 
 use Attribute;
 
+/**
+ * Primary resource attribute. Required for the operation of the DTO kernel listener mechanism.
+ * Use Resource attribute to configure listeners.
+ */
 #[Attribute(Attribute::TARGET_ALL)]
 class Resource
 {
     const TYPE_AUTO = 1;
     const TYPE_DATA_TRANSFORMER = 2;
 
+    /**
+     * @param string|null $objectClass Class of the object to which the conversion is carried out: input dto -> object -> output dto
+     * @param string|null $managerClass Manager class that handles the object (only for entities)
+     * @param string|null $inputCreateDTOClass Input DTO object class for POST request method (creating a new object)
+     * @param string|null $inputUpdateDTOClass Input DTO object class for PUT / PATCH request method (update of existing object
+     * @param string|null $outputDTOClass Output DTO class
+     * @param int|null $deserializationType Deserialization mode (automatic or data transformer)
+     * @param int|null $collectionItemDeserializationType Deserialization mode for nested collections (automatic or data transformer)
+     * @param bool|null $isDisabled Totally blocks input/output listeners
+     * @param bool|null $isCollection Designation of data type - collection
+     * @param string|null $collectionOutputDTOClass The DTO's output class of the collection
+     * @param string|null $collectionItemOutputDTOClass The DTO output class of the collection item
+     * @param bool|null $isActionDisabled Blocking the action of working with an object (creating, updating)
+     * @param bool|null $isSecurityCheckDisabled Disables permission verification (isGranted forced to true)
+     * @param bool|null $isCRUD CRUD resource true|false
+     * @param string|null $voterAction Voter action (custom action name)
+     */
     public function __construct(
-        protected ?string $entityClass = null,
+        protected ?string $objectClass = null,
         protected ?string $managerClass = null,
         protected ?string $inputCreateDTOClass = null,
         protected ?string $inputUpdateDTOClass = null,
@@ -21,25 +42,29 @@ class Resource
         protected ?bool   $isDisabled = null,
         protected ?bool   $isCollection = null,
         protected ?string $collectionOutputDTOClass = null,
-        protected ?string $collectionItemOutputDTOClass = null
+        protected ?string $collectionItemOutputDTOClass = null,
+        protected ?bool   $isActionDisabled = null,
+        protected ?bool   $isSecurityCheckDisabled = null,
+        protected ?bool   $isCRUD = null,
+        protected ?string $voterAction = null
     ) {
     }
 
     /**
      * @return string|null
      */
-    public function getEntityClass(): ?string
+    public function getObjectClass(): ?string
     {
-        return $this->entityClass;
+        return $this->objectClass;
     }
 
     /**
-     * @param string|null $entityClass
+     * @param string|null $objectClass
      * @return Resource
      */
-    public function setEntityClass(?string $entityClass): Resource
+    public function setObjectClass(?string $objectClass): Resource
     {
-        $this->entityClass = $entityClass;
+        $this->objectClass = $objectClass;
         return $this;
     }
 
@@ -225,6 +250,78 @@ class Resource
     public function setCollectionItemOutputDTOClass(?string $collectionItemOutputDTOClass): Resource
     {
         $this->collectionItemOutputDTOClass = $collectionItemOutputDTOClass;
+        return $this;
+    }
+
+    /**
+     * @return bool|null
+     */
+    public function getIsActionDisabled(): ?bool
+    {
+        return $this->isActionDisabled;
+    }
+
+    /**
+     * @param bool|null $isActionDisabled
+     * @return Resource
+     */
+    public function setIsActionDisabled(?bool $isActionDisabled): Resource
+    {
+        $this->isActionDisabled = $isActionDisabled;
+        return $this;
+    }
+
+    /**
+     * @return bool|null
+     */
+    public function getIsSecurityCheckDisabled(): ?bool
+    {
+        return $this->isSecurityCheckDisabled;
+    }
+
+    /**
+     * @param bool|null $isSecurityCheckDisabled
+     * @return Resource
+     */
+    public function setIsSecurityCheckDisabled(?bool $isSecurityCheckDisabled): Resource
+    {
+        $this->isSecurityCheckDisabled = $isSecurityCheckDisabled;
+        return $this;
+    }
+
+    /**
+     * @return bool|null
+     */
+    public function getIsCRUD(): ?bool
+    {
+        return $this->isCRUD;
+    }
+
+    /**
+     * @param bool|null $isCRUD
+     * @return Resource
+     */
+    public function setIsCRUD(?bool $isCRUD): Resource
+    {
+        $this->isCRUD = $isCRUD;
+        return $this;
+    }
+
+    /**
+     * @return string|null
+     */
+    public function getVoterAction(): ?string
+    {
+        return $this->voterAction;
+    }
+
+    /**
+     * @param string|null $voterAction
+     * @return Resource
+     */
+    public function setVoterAction(?string $voterAction): Resource
+    {
+        $this->voterAction = $voterAction;
         return $this;
     }
 }

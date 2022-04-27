@@ -40,6 +40,7 @@ class ResourceHelper
          * @var Resource|null $controllerResource
          */
         $controllerResource = null;
+        $entityResource = null;
 
         if (count($methodData) < 2) {
             return null;
@@ -55,7 +56,10 @@ class ResourceHelper
             return null;
         }
 
-        $manager = $this->managerContainer->getByManagerClass($controllerResource->getManagerClass());
+        if ($controllerResource->getManagerClass()) {
+            $manager = $this->managerContainer->getByManagerClass($controllerResource->getManagerClass());
+        }
+
 
         $entityClass = null;
 
@@ -63,16 +67,22 @@ class ResourceHelper
             $entityClass = $manager->getResourceEntityClass();
         }
 
-        if (!$entityClass) {
-            //TODO Prepare solution in case of missing manager and null entity class.
-            return null;
+//        if (!$entityClass) {
+//            //TODO Prepare solution in case of missing manager and null entity class.
+//            return null;
+//        }
+
+        if ($manager) {
+            $this->updateResourceConfiguration($controllerResource, $manager);
         }
 
-        $this->updateResourceConfiguration($controllerResource, $manager);
 
         //We've got entity class
         //We fetch entity attributes.
-        $entityResource = $this->getClassResource($entityClass);
+        if ($entityClass) {
+            $entityResource = $this->getClassResource($entityClass);
+        }
+
 
         //Atrybuty encji, mając atrybut encji, mamy dostęp do obiektów DTO
         //Do rozwazenia budowa obiketu Resource na podstawie poszczegolnych atrybutow Resource
@@ -158,9 +168,8 @@ class ResourceHelper
      */
     public function mergeResource(Resource $LSresource, Resource $MSresource): Resource
     {
-
         return new Resource(
-            $MSresource->getEntityClass() ?? $LSresource->getEntityClass(),
+            $MSresource->getObjectClass() ?? $LSresource->getObjectClass(),
             $MSresource->getManagerClass() ?? $LSresource->getManagerClass(),
             $MSresource->getInputCreateDTOClass() ?? $LSresource->getInputCreateDTOClass(),
             $MSresource->getInputUpdateDTOClass() ?? $LSresource->getInputUpdateDTOClass(),
@@ -170,7 +179,11 @@ class ResourceHelper
             $MSresource->getIsDisabled() ?? $LSresource->getIsDisabled(),
             $MSresource->getIsCollection() ?? $LSresource->getIsCollection(),
             $MSresource->getCollectionOutputDTOClass() ?? $LSresource->getCollectionOutputDTOClass(),
-            $MSresource->getCollectionItemOutputDTOClass() ?? $LSresource->getCollectionItemOutputDTOClass()
+            $MSresource->getCollectionItemOutputDTOClass() ?? $LSresource->getCollectionItemOutputDTOClass(),
+            $MSresource->getIsActionDisabled() ?? $LSresource->getIsActionDisabled(),
+            $MSresource->getIsSecurityCheckDisabled() ?? $LSresource->getIsSecurityCheckDisabled(),
+            $MSresource->getIsCRUD() ?? $LSresource->getIsCRUD(),
+            $MSresource->getVoterAction() ?? $LSresource->getVoterAction()
         );
     }
 
@@ -181,8 +194,8 @@ class ResourceHelper
      */
     public function updateResourceConfiguration(Resource $resource, ?ManagerInterface $manager = null): Resource
     {
-        if (!$resource->getEntityClass() && $manager) {
-            $resource->setEntityClass($manager->getResourceEntityClass());
+        if (!$resource->getObjectClass() && $manager) {
+            $resource->setObjectClass($manager->getResourceEntityClass());
         }
 
         if (!$resource->getInputUpdateDTOClass(false)) {

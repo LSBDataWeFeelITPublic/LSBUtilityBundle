@@ -4,6 +4,9 @@ namespace LSB\UtilityBundle\Attribute;
 
 use Attribute;
 
+/**
+ * Attribute used to designate the input DTO property to be converted to an object.
+ */
 #[Attribute(Attribute::TARGET_PROPERTY)]
 class ConvertToObject
 {
@@ -14,6 +17,13 @@ class ConvertToObject
 //    const SECURITY_LEVEL_PROTECTED = 20; //Object can be accessed after validation (via returned DTO object)
 //    const SECURITY_LEVEL_PRIVATE = 30; //Object is available only for application (serialize
 
+    /**
+     * @param int $key Object primary key ID|UUID
+     * @param string|null $managerClass Manager class dedicated to the specific entity object
+     * @param string|null $voterAction Voter action
+     * @param bool $throwNotFoundException
+     * @param string|null $objectClass Entity FQCN
+     */
     public function __construct(
         protected int     $key = self::KEY_UUID,
         protected ?string $managerClass = null,

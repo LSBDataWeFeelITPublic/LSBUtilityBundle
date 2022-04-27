@@ -4,13 +4,7 @@ namespace LSB\UtilityBundle\DTO\Model;
 
 interface DTOInterface
 {
-    public function getErrors(): array;
+    public function getObject(): ?object;
 
-    public function addError($key, $error);
-
-    public function getEntity(): ?object;
-
-    public function setEntity(?object $entity);
-
-    public function isValid(): bool;
+    public function setObject(?object $entity);
 }

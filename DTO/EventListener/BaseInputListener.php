@@ -47,6 +47,7 @@ abstract class BaseInputListener extends BaseListener
 
         //in the beginning we create RequestData object
         $requestData = RequestAttributes::getOrderCreateRequestData($request);
+
         $resource = $this->resourceHelper->fetchResource($request);
         $requestData->setResource($resource);
 
@@ -55,85 +56,164 @@ abstract class BaseInputListener extends BaseListener
         }
 
         //Depending on the request method, we use a different approach to data processing
-        switch ($request->getMethod()) {
-            case Request::METHOD_POST:
-                if ($this->DTOService->isGranted($resource, $request, BaseObjectVoter::ACTION_POST, null)) {
-                    $requestData->setIsGranted(true);
-                } else {
-                    break;
-                }
+        if ($resource->getIsCRUD()) {
+            if (!$resource->getManagerClass()) {
+                throw new \Exception('Manager class is required for CRUD operations.');
+            }
 
-                $inputDTO = $this->prepareInputDTO($request, $resource);
+            switch ($request->getMethod()) {
+                case Request::METHOD_POST:
+                    if (!$resource->getIsSecurityCheckDisabled()) {
+                        if ($this->DTOService->isGranted($resource, $request, BaseObjectVoter::ACTION_POST, null)) {
+                            $requestData->setIsGranted(true);
+                        } else {
+                            break;
+                        }
+                    } else {
+                        $requestData->setIsGranted(true);
+                    }
 
-                if ($inputDTO->isValid()) {
-                    $object = $this->DTOService->createNewFromDTO($resource, $inputDTO, $request);
-                    $requestData->setObject($object);
-                }
+                    $inputDTO = $this->prepareInputDTO($request, $resource);
 
-                $requestData->setInputDTO($inputDTO);
-                break;
-            case Request::METHOD_PATCH:
-            case Request::METHOD_PUT:
-                $inputDTO = $this->prepareInputDTO($request, $resource);
-
-                if ($this->DTOService->isGranted($resource, $request, BaseObjectVoter::ACTION_POST, $inputDTO->getEntity())) {
-                    $requestData->setIsGranted(true);
-                } else {
-                    break;
-                }
-
-                if ($inputDTO->isValid()) {
-
-                    $object = $this->DTOService->updateFromDTO($resource, $inputDTO, $request, $this->DTOService->getAppCode($request));
-
-                    if (!$requestData->getObject()) {
+                    if (!$resource->getIsActionDisabled() && $inputDTO->isValid()) {
+                        $object = $this->DTOService->createNewFromDTO($resource, $inputDTO, $request);
                         $requestData->setObject($object);
                     }
-                }
-                $requestData->setInputDTO($inputDTO);
-                break;
-            case Request::METHOD_DELETE:
-                if (!$requestData->getObject()) {
-                    $object = $this->prepareObject($resource, $request);
-                    $requestData->setObject($object);
-                }
 
-                if ($requestData->getObject() && $this->DTOService->isGranted($resource, $request, BaseObjectVoter::ACTION_DELETE, $requestData->getObject())) {
-                    $requestData->setIsGranted(true);
-                } else {
+                    $requestData->setInputDTO($inputDTO);
                     break;
-                }
+                case Request::METHOD_PATCH:
+                case Request::METHOD_PUT:
+                    $inputDTO = $this->prepareInputDTO($request, $resource);
+                    $requestData->setInputDTO($inputDTO);
 
-                $this->DTOService->remove($resource, $requestData->getObject());
+                    if (!$resource->getIsSecurityCheckDisabled()) {
+                        if ($inputDTO->getObject() && $this->DTOService->isGranted($resource, $request, BaseObjectVoter::ACTION_POST, $inputDTO->getObject())) {
+                            $requestData->setIsGranted(true);
+                        } else {
+                            break;
+                        }
+                    } else {
+                        $requestData->setIsGranted(true);
+                    }
 
-                break;
-            case Request::METHOD_GET:
-                //Collection
-                if ($requestData->getResource()->getIsCollection()) {
+                    if (!$resource->getIsActionDisabled() && $inputDTO->isValid()) {
+                        $object = $this->DTOService->updateFromDTO($resource, $inputDTO, $request, $this->DTOService->getAppCode($request));
 
-                    if (!$this->DTOService->isGranted($resource, $request, BaseObjectVoter::ACTION_CGET, $requestData->getObject())) {
-                        $requestData->setIsGranted(false);
+                        if (!$requestData->getObject()) {
+                            $requestData->setObject($object);
+                        }
+                    }
+                    //$requestData->setInputDTO($inputDTO);
+                    break;
+                case Request::METHOD_DELETE:
+                    if (!$resource->getIsActionDisabled()) {
                         break;
                     }
 
-                    $collection = $this->DTOService->paginateCollection($resource, $request);
-                    $requestData->setIsGranted($this->DTOService->checkCollection($resource, $request, $collection, BaseObjectVoter::ACTION_GET));
-                    $requestData->setObject($collection);
-                } else {
-                    // Single object
                     if (!$requestData->getObject()) {
                         $object = $this->prepareObject($resource, $request);
                         $requestData->setObject($object);
                     }
 
-                    if ($requestData->getObject() && $this->DTOService->isGranted($resource, $request, BaseObjectVoter::ACTION_GET, $requestData->getObject())) {
-                        $requestData->setIsGranted(true);
+                    if (!$resource->getIsSecurityCheckDisabled()) {
+                        if ($requestData->getObject() && $this->DTOService->isGranted($resource, $request, BaseObjectVoter::ACTION_DELETE, $requestData->getObject())) {
+                            $requestData->setIsGranted(true);
+                        } else {
+                            break;
+                        }
                     } else {
+                        $requestData->setIsGranted(true);
+                    }
+
+                    $this->DTOService->remove($resource, $requestData->getObject());
+
+                    break;
+                case Request::METHOD_GET:
+                    if (!$resource->getIsActionDisabled()) {
                         break;
                     }
+
+                    //Collection
+                    if ($requestData->getResource()->getIsCollection()) {
+
+                        if (!$resource->getIsSecurityCheckDisabled()) {
+                            if (!$this->DTOService->isGranted($resource, $request, BaseObjectVoter::ACTION_CGET, $requestData->getObject())) {
+                                $requestData->setIsGranted(false);
+                                break;
+                            }
+                        } else {
+                            $requestData->setIsGranted(true);
+                        }
+
+
+                        $collection = $this->DTOService->paginateCollection($resource, $request);
+                        $requestData->setIsGranted($this->DTOService->checkCollection($resource, $request, $collection, BaseObjectVoter::ACTION_GET));
+                        $requestData->setObject($collection);
+                    } else {
+                        // Single object
+                        if (!$requestData->getObject()) {
+                            $object = $this->prepareObject($resource, $request);
+                            $requestData->setObject($object);
+                        }
+                        if (!$resource->getIsSecurityCheckDisabled()) {
+                            if ($requestData->getObject() && $this->DTOService->isGranted($resource, $request, BaseObjectVoter::ACTION_GET, $requestData->getObject())) {
+                                $requestData->setIsGranted(true);
+                            } else {
+                                break;
+                            }
+                        } else {
+                            $requestData->setIsGranted(true);
+                        }
+                    }
+                    break;
+            }
+        } else {
+            //Non CRUD actions
+            //We can convert DTO to some internal object without CRUD actions.
+            //Custom logic should be added in controller action body
+            switch ($request->getMethod()) {
+                case Request::METHOD_POST:
+                    $defaultAction = BaseObjectVoter::ACTION_POST;
+                    break;
+                case Request::METHOD_GET:
+                    $defaultAction = BaseObjectVoter::ACTION_GET;
+                    break;
+                case Request::METHOD_PUT:
+                    $defaultAction = BaseObjectVoter::ACTION_PUT;
+                    break;
+                case Request::METHOD_PATCH:
+                    $defaultAction = BaseObjectVoter::ACTION_PATCH;
+                    break;
+                case Request::METHOD_DELETE:
+                    $defaultAction = BaseObjectVoter::ACTION_DELETE;
+                    break;
+                default:
+                    if (!$resource->getVoterAction() && !$resource->getIsSecurityCheckDisabled()) {
+                        throw new \Exception('Voter action is required. Disable security check for this action or specify a voter action.');
+                    }
+                    //Not supported by the listener
+                    return;
+            }
+
+            if (!$resource->getIsSecurityCheckDisabled()) {
+                if ($this->DTOService->isGranted($resource, $request, $resource->getVoterAction() ?? $defaultAction, null)) {
+                    $requestData->setIsGranted(true);
                 }
-                break;
+            } else {
+                $requestData->setIsGranted(true);
+            }
+
+            $inputDTO = $this->prepareInputDTO($request, $resource);
+
+            if (!$resource->getIsActionDisabled() && $inputDTO->isValid()) {
+                $object = $this->DTOService->createNewFromDTO($resource, $inputDTO, $request);
+                $requestData->setObject($object);
+            }
+
+            $requestData->setInputDTO($inputDTO);
         }
+
 
         RequestAttributes::updateRequestData($request, $requestData);
     }
@@ -149,23 +229,47 @@ abstract class BaseInputListener extends BaseListener
         return $this->DTOService->getObjectByRequestId($resource, RequestAttributes::getRequestIdentifier($request));
     }
 
+    /**
+     * @throws \ReflectionException
+     */
     protected function prepareInputDTO(Request $request, Resource $resource): ?InputDTOInterface
     {
         $dto = null;
-        $manager = $this->managerContainer->getByManagerClass($resource->getManagerClass());
+
+        if ($resource->getManagerClass()) {
+            $manager = $this->managerContainer->getByManagerClass($resource->getManagerClass());
+        } else {
+            $manager = null;
+        }
+
         $context = DeserializationContext::create();
 
-        if (!$manager instanceof ManagerInterface) {
-            //Temporarily exception will be thrown if manager will be not set
-            throw new \Exception();
+        if ($resource->getIsCRUD() && !$manager instanceof ManagerInterface) {
+            throw new \Exception('Manager is required.');
         }
 
         switch ($request->getMethod()) {
             case Request::METHOD_PATCH:
             case Request::METHOD_PUT:
+                if (!$resource->getInputCreateDTOClass()) {
+                    throw new \Exception('Input Create DTO Class is missing.');
+                }
+
                 //We need to fetch entity with given UUID using class manager
                 $dto = new ($resource->getInputUpdateDTOClass())();
+
+                if (!$dto instanceof InputDTOInterface) {
+                    throw new \Exception('Input DTO class must implement InputDTOInterface.');
+                }
+
                 $requestIdentifier = RequestAttributes::getRequestIdentifier($request);
+
+                if ($resource->getIsCRUD() && !$requestIdentifier) {
+                    throw new \Exception('Request identifier is required for PUT & PATCH method. If no entity is used please use POST method.');
+                } elseif (!$resource->getIsCRUD() && !$requestIdentifier) {
+                    break;
+                }
+
                 $dto = $this->DTOService->prepareInputDTO(
                     $resource,
                     $requestIdentifier,
@@ -175,6 +279,10 @@ abstract class BaseInputListener extends BaseListener
                 );
                 $context->setAttribute(ExistingObjectConstructor::ATTRIBUTE_TARGET, $dto);
                 break;
+        }
+
+        if (!$resource->getInputCreateDTOClass()) {
+            throw new \Exception('Input Create DTO Class is missing.');
         }
 
         $dto = $this->serializer->deserialize(

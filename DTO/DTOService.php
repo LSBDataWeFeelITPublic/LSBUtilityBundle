@@ -2,33 +2,50 @@
 
 namespace LSB\UtilityBundle\DTO;
 
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Proxy\Proxy;
 use Knp\Component\Pager\Pagination\PaginationInterface;
 use Knp\Component\Pager\PaginatorInterface;
+use LSB\UtilityBundle\Attribute\ConvertToObject;
+use LSB\UtilityBundle\Attribute\DTOPropertyConfig;
 use LSB\UtilityBundle\Attribute\Resource;
 use LSB\UtilityBundle\Controller\BaseApiController;
 use LSB\UtilityBundle\DTO\DataTransformer\DataTransformerService;
 use LSB\UtilityBundle\DTO\DataTransformer\EntityConverter;
+use LSB\UtilityBundle\DTO\Model\BaseDTO;
+use LSB\UtilityBundle\DTO\Model\DTOInterface;
 use LSB\UtilityBundle\DTO\Model\Input\InputDTOInterface;
+use LSB\UtilityBundle\DTO\Model\ObjectHolder;
 use LSB\UtilityBundle\DTO\Model\Output\OutputDTOInterface;
 use LSB\UtilityBundle\DTO\Request\RequestAttributes;
 use LSB\UtilityBundle\DTO\Request\RequestIdentifier;
 use LSB\UtilityBundle\DTO\Resource\ResourceHelper;
+use LSB\UtilityBundle\Interfaces\IdInterface;
 use LSB\UtilityBundle\Interfaces\UuidInterface;
+use LSB\UtilityBundle\Manager\ManagerInterface;
 use LSB\UtilityBundle\Repository\PaginationInterface as RepositoryPaginationInterface;
 use LSB\UtilityBundle\Service\ManagerContainerInterface;
+use Ramsey\Uuid\Nonstandard\Uuid;
 use ReflectionClass;
+use ReflectionProperty;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
+use Webmozart\Assert\Assert;
 
 class DTOService
 {
+    const NESTING_LEVEL_MAX = 3;
+    const NESTING_LEVEL_BLOCKED = -100;
+    const NESTING_LEVEL_ALLOWED = 0;
+
     public function __construct(
         protected ManagerContainerInterface     $managerContainer,
         protected DataTransformerService        $dataTransformerService,
         protected AuthorizationCheckerInterface $authorizationChecker,
         protected PaginatorInterface            $paginator,
-        protected ResourceHelper                $resourceHelper
+        protected ResourceHelper                $resourceHelper,
+        protected RequestStack                  $requestStack
     ) {
     }
 
@@ -56,14 +73,23 @@ class DTOService
      */
     public function createNewFromDTO(Resource $resource, $inputDTO, Request $request, ?string $appCode = null): object
     {
-        $manager = $this->managerContainer->getByManagerClass($resource->getManagerClass());
+        //No manager, object will not be persisted
+        $manager = null;
+
+        if ($resource->getManagerClass()) {
+            $manager = $this->managerContainer->getByManagerClass($resource->getManagerClass());
+        }
 
         if (!$inputDTO->isValid()) {
             throw new \Exception('DTO is invalid. Unable to create new object.');
         }
 
-        $object = $manager->createNew();
-        $entityConverter = new EntityConverter();
+        if ($manager) {
+            $object = $manager->createNew();
+        } else {
+            $object = new ($resource->getObjectClass());
+        }
+
 
         if ($resource->getDeserializationType() === Resource::TYPE_DATA_TRANSFORMER) {
             $dataTransformer = $this->dataTransformerService->getDataTransformer($inputDTO, $manager->getResourceEntityClass(), []);
@@ -78,10 +104,12 @@ class DTOService
                 $this->dataTransformerService->buildDataTransformerContext($inputDTO, null, $object, $manager)
             );
         } else {
-            $entityConverter->populateEntityWithDTO($inputDTO, $object, true, $this, $request);
+            $this->populateEntityWithDTO($inputDTO, $object, true, $request);
         }
 
-        $manager->update($object);
+        if ($manager) {
+            $manager->update($object);
+        }
 
         return $object;
     }
@@ -89,21 +117,30 @@ class DTOService
     /**
      * @param \LSB\UtilityBundle\Attribute\Resource $resource
      * @param $inputDTO
+     * @param \Symfony\Component\HttpFoundation\Request $request
      * @param string|null $appCode
      * @return object
      * @throws \Exception
      */
     public function updateFromDTO(Resource $resource, $inputDTO, Request $request, ?string $appCode = null): object
     {
-        $manager = $this->managerContainer->getByManagerClass($resource->getManagerClass());
+        if ($resource->getManagerClass()) {
+            $manager = $this->managerContainer->getByManagerClass($resource->getManagerClass());
+        } else {
+            $manager = null;
+        }
+
 
         if (!$inputDTO->isValid()) {
             throw new \Exception('DTO is invalid. Unable to create new object.');
         }
 
-        $object = $inputDTO->getEntity();
+        $object = $inputDTO->getObject();
 
-        $entityConverter = new EntityConverter();
+        if (!$object) {
+            throw new \Exception('Object is required for updateFromDTO method.');
+        }
+
 
         if ($resource->getDeserializationType() === Resource::TYPE_DATA_TRANSFORMER) {
             $dataTransformer = $this->dataTransformerService->getDataInitializerTransformer($inputDTO, $manager->getResourceEntityClass(), []);
@@ -118,9 +155,12 @@ class DTOService
                 $this->dataTransformerService->buildDataTransformerContext($inputDTO, null, $object, $manager)
             );
         } else {
-            $entityConverter->populateEntityWithDTO($inputDTO, $object, true, $this, $request);
+            $this->populateEntityWithDTO($inputDTO, $object, true, $request);
         }
-        $manager->update($object);
+
+        if ($manager) {
+            $manager->update($object);
+        }
 
         return $object;
     }
@@ -131,11 +171,21 @@ class DTOService
      * @param object $object
      * @param null $deserializationType
      * @param int $level
-     * @return \LSB\UtilityBundle\DTO\Model\Output\OutputDTOInterface
+     * @return \LSB\UtilityBundle\DTO\Model\Output\OutputDTOInterface|null
      * @throws \Exception
      */
-    public function generateOutputDTO(Resource $resource, ?OutputDTOInterface $outputDTO, object $object, $deserializationType = null, int $level = 0): OutputDTOInterface
-    {
+    public function generateOutputDTO(
+        Resource            $resource,
+        object              $object,
+        ?OutputDTOInterface $outputDTO = null,
+                            $deserializationType = null,
+        int                 $level = 0
+    ): ?OutputDTOInterface {
+        //TODO add max level to resource configuration
+        if ($level >= self::NESTING_LEVEL_MAX || $level === self::NESTING_LEVEL_BLOCKED) {
+            return null;
+        }
+
         $isIterable = is_iterable($object);
 
         $processAsCollection = $resource->getIsCollection() && $isIterable;
@@ -146,6 +196,10 @@ class DTOService
             }
         } elseif (!$outputDTO) {
             $outputDTO = new ($resource->getOutputDTOClass())();
+        }
+
+        if (!$outputDTO instanceof OutputDTOInterface) {
+            throw new \Exception('Output DTO class must implement OutputDTOInterface');
         }
 
         if (!$deserializationType) {
@@ -163,7 +217,13 @@ class DTOService
                     $items = [];
 
                     foreach ($object->getItems() as $item) {
-                        $items[] = $this->generateOutputDTO($resource, $resource->getCollectionItemOutputDTOClass(), $item, $resource->getCollectionItemDeserializationType(), $level + 1);
+                        $items[] = $this->generateOutputDTO(
+                            $resource,
+                            $item,
+                            $resource->getCollectionItemOutputDTOClass(),
+                            $resource->getCollectionItemDeserializationType(),
+                            $level + 1
+                        );
                     }
 
                     $object->setItems($items);
@@ -182,8 +242,7 @@ class DTOService
                     );
                 }
             } else {
-                $entityConverter = new EntityConverter();
-                $entityConverter->populateDtoWithEntity($object, $outputDTO, $this);
+                $this->populateDtoWithEntity($object, $outputDTO);
             }
         } else {
             if ($deserializationType === Resource::TYPE_DATA_TRANSFORMER) {
@@ -196,8 +255,8 @@ class DTOService
                     );
                 }
             } else {
-                $entityConverter = new EntityConverter();
-                $entityConverter->populateDtoWithEntity($object, $outputDTO, $this);
+
+                $this->populateDtoWithEntity($object, $outputDTO);
             }
         }
         return $outputDTO;
@@ -245,8 +304,8 @@ class DTOService
                     );
                 }
             } else {
-                $entityConverter = new EntityConverter();
-                $entityConverter->populateDtoWithEntity($object, $outputDTO);
+
+                $this->populateDtoWithEntity($object, $outputDTO);
             }
         }
 
@@ -313,8 +372,8 @@ class DTOService
         if ($populate) {
             switch ($resource->getDeserializationType()) {
                 case Resource::TYPE_AUTO:
-                    $entityConverter = new EntityConverter();
-                    $entityConverter->populateDtoWithEntity($object, $inputDTO);
+
+                    $this->populateDtoWithEntity($object, $inputDTO);
                     break;
 
                 case Resource::TYPE_DATA_TRANSFORMER:
@@ -332,7 +391,7 @@ class DTOService
 
         }
 
-        $inputDTO->setEntity($object);
+        $inputDTO->setObject($object);
 
         return $inputDTO;
     }
@@ -343,6 +402,7 @@ class DTOService
      * @param \LSB\UtilityBundle\DTO\Model\Output\OutputDTOInterface $requestDTO
      * @param bool $populate
      * @return \LSB\UtilityBundle\DTO\Model\Output\OutputDTOInterface
+     * @throws \Exception
      */
     public function prepareOutputDTO(
         Resource           $resource,
@@ -352,18 +412,21 @@ class DTOService
     ): OutputDTOInterface {
 
         if ($populate) {
-            $entityConverter = new EntityConverter();
-            $entityConverter->populateDtoWithEntity($object, $requestDTO);
+            $this->populateDtoWithEntity($object, $requestDTO);
         }
 
         //The entity will be used later.
-        $requestDTO->setEntity($object);
+        $requestDTO->setObject($object);
 
         return $requestDTO;
     }
 
-    public function getAppCode(Request $request): ?string
+    public function getAppCode(?Request $request = null): ?string
     {
+        if (!$request) {
+            $request = $this->requestStack->getCurrentRequest();
+        }
+
         $appCode = null;
         $controllerPath = $request->attributes->get('_controller');
         $path = explode('::', $controllerPath);
@@ -392,8 +455,13 @@ class DTOService
      */
     public function isGranted(Resource $resource, Request $request, string $action, $subject = null): bool
     {
-        $manager = $this->managerContainer->getByManagerClass($resource->getManagerClass());
-        return $this->authorizationChecker->isGranted($action, $manager->getVoterSubject($subject, $this->getAppCode($request)));
+        if ($resource->getManagerClass()) {
+            $manager = $this->managerContainer->getByManagerClass($resource->getManagerClass());
+        } else {
+            $manager = null;
+        }
+
+        return $this->authorizationChecker->isGranted($action, $manager?->getVoterSubject($subject, $this->getAppCode($request)));
     }
 
     /**
@@ -483,7 +551,6 @@ class DTOService
      * @param string $class
      * @param bool $updateConfiguration
      * @return \LSB\UtilityBundle\Attribute\Resource|null
-     * @throws \ReflectionException
      */
     public function getResourceByEntity(string $class, bool $updateConfiguration = false): ?Resource
     {
@@ -517,5 +584,378 @@ class DTOService
         return $entityResource;
     }
 
+    public function getResourceByProperty(ReflectionProperty $reflectionProperty, bool $updateConfiguration = false, ?Resource $LSResource = null): ?Resource
+    {
 
+        $propertyAttributes = $reflectionProperty->getAttributes(Resource::class);
+        $resource = null;
+
+        /**
+         * @var Resource|null $resource
+         */
+        foreach ($propertyAttributes as $entityAttribute) {
+            if ($entityAttribute->getName() !== Resource::class) {
+                continue;
+            }
+            $resource = $entityAttribute->newInstance();
+        }
+
+        if ($resource && $LSResource) {
+            $resource = $this->resourceHelper->mergeResource($LSResource, $resource);
+        } elseif (!$resource && $LSResource) {
+            $resource = $LSResource;
+        }
+
+        if ($resource && $updateConfiguration) {
+            $this->resourceHelper->updateResourceConfiguration($resource);
+        }
+
+        return $resource;
+    }
+
+    /**
+     * @param string $class
+     * @param \ReflectionProperty $reflectionProperty
+     * @param bool $updateConfiguration
+     * @return \LSB\UtilityBundle\Attribute\Resource|null
+     * @throws \ReflectionException
+     */
+    public function getItemResource(string $class, ReflectionProperty $reflectionProperty, bool $updateConfiguration = false): ?Resource
+    {
+        $itemResource = $this->getResourceByEntity($class, true);
+        $itemResource = $this->getResourceByProperty($reflectionProperty, true, $itemResource);
+
+        if (!$itemResource instanceof Resource) {
+            throw new \Exception('Missing Resource attribute for class ' . $class);
+        }
+
+        return $itemResource;
+    }
+
+    public static array $excludedProps = ['errors'];
+
+    /**
+     * @param InputDTOInterface $dto
+     * @param object $targetObject
+     * @param bool $convertIdsIntoEntities
+     * @param \Symfony\Component\HttpFoundation\Request|null $request
+     * @param string|null $appCode
+     * @throws \Exception
+     */
+    public function populateEntityWithDTO(
+        InputDTOInterface $dto,
+        object            $targetObject,
+        bool              $convertIdsIntoEntities = true,
+        ?Request          $request = null,
+        ?string           $appCode = null
+    ): void {
+        if (!$request) {
+            $request = $this->requestStack->getCurrentRequest();
+        }
+
+        $propertiesFilter = ReflectionProperty::IS_PUBLIC | ReflectionProperty::IS_PROTECTED | ReflectionProperty::IS_PRIVATE;
+
+        $reflectionDTO = new ReflectionClass($dto);
+        $reflectionProperties = $reflectionDTO->getProperties($propertiesFilter);
+
+        /**
+         * @var ReflectionProperty $reflectionProperty
+         */
+        foreach ($reflectionProperties as $reflectionProperty) {
+            if (array_search($reflectionProperty->getName(), self::$excludedProps) !== false) {
+                continue;
+            }
+            $DTOObjectGetters = [];
+            $setterMethod = null;
+
+            $DTOPropertyConfig = self::getDTOPropertyConfig($reflectionProperty);
+
+            if ($DTOPropertyConfig) {
+                if ($DTOPropertyConfig->getDTOGetter()) {
+                    $DTOObjectGetters = [$DTOPropertyConfig->getDTOGetter()];
+                }
+
+                if ($DTOPropertyConfig->getObjectSetter()) {
+                    $setterMethod = $DTOPropertyConfig->getObjectSetter();
+                }
+            }
+
+            if (count($DTOObjectGetters) === 0) {
+                $DTOObjectGetters = $this->generateGetterNames($reflectionProperty->getName());
+            }
+
+            $setterMethod = ($setterMethod ?? null) ?: $this->generateSetterName($reflectionProperty->getName());
+
+            foreach ($DTOObjectGetters as $DTOObjectGetter) {
+                if (!method_exists($dto, $DTOObjectGetter)) {
+                    continue;
+                }
+
+                if (method_exists($targetObject, $setterMethod)) {
+                    $dtoValue = $dto->$DTOObjectGetter();
+                    if ($convertIdsIntoEntities && $this->hasConvertToObjectAttribute($reflectionProperty)) {
+                        $objectHolder = $this->convertValueToObjectHolder($reflectionProperty, $dto, $DTOObjectGetter, $request);
+
+                        if ($objectHolder instanceof ObjectHolder && $objectHolder->getObject()) {
+                            $targetObject->$setterMethod($objectHolder->getObject());
+                        } else {
+                            $targetObject->$setterMethod(null);
+                        }
+                    } else {
+                        $targetObject->$setterMethod($dtoValue);
+                    }
+                }
+
+                break;
+            }
+        }
+    }
+
+    /**
+     * Support for DTO autofilling for DTO and Entity coexisting properties
+     * Used by InputDTO and OutputDTO objects
+     *
+     * @param object $targetObject
+     * @param \LSB\UtilityBundle\DTO\Model\BaseDTO $requestDTO
+     * @param \LSB\UtilityBundle\Attribute\Resource|null $resource
+     * @param bool $allowNestedObject
+     * @throws \ReflectionException
+     */
+    public function populateDtoWithEntity(object $targetObject, BaseDTO $requestDTO, ?Resource $resource = null, bool $allowNestedObject = true): void
+    {
+        $propertiesFilter = ReflectionProperty::IS_PUBLIC | ReflectionProperty::IS_PROTECTED | ReflectionProperty::IS_PRIVATE;
+        $reflectionDTO = new ReflectionClass($requestDTO);
+        $reflectionProperties = $reflectionDTO->getProperties($propertiesFilter);
+        $nestingLevel = $allowNestedObject ? self::NESTING_LEVEL_ALLOWED : self::NESTING_LEVEL_BLOCKED;
+
+        foreach ($reflectionProperties as $reflectionProperty) {
+            if (array_search($reflectionProperty->getName(), self::$excludedProps) !== false) {
+                continue;
+            }
+
+            $targetObjectGetters = $this->generateGetterNames($reflectionProperty->getName());
+
+            foreach ($targetObjectGetters as $targetObjectGetter) {
+                if (!method_exists($targetObject, $targetObjectGetter)) {
+                    continue;
+                }
+
+                //TODO refactor, use PropertyAccessor
+                $setterMethod = $this->generateSetterName($reflectionProperty->getName());
+
+                if (method_exists($requestDTO, $setterMethod)) {
+                    $value = $targetObject->$targetObjectGetter();
+
+                    if (!is_object($value) && !is_iterable($value)) {
+                        $requestDTO->$setterMethod($value);
+                    } elseif (is_object($value)) {
+                        $itemResource = $this->getItemResource($this->getRealClass($value), $reflectionProperty, true);
+                        $valueDTO = $this->generateOutputDTO(
+                            resource: $itemResource,
+                            object: $value,
+                            level: $nestingLevel
+                        );
+                        $requestDTO->$setterMethod($valueDTO);
+                    } elseif (is_iterable($value)) {
+                        $array = [];
+
+                        foreach ($value as $item) {
+                            $itemResource = $this->getItemResource($this->getRealClass($item), $reflectionProperty, true);
+                            $itemDTO = $this->generateOutputDTO(
+                                resource: $itemResource,
+                                object: $item,
+                                level: $nestingLevel
+                            );
+                            $array[] = $itemDTO;
+                        }
+
+                        $requestDTO->$setterMethod($array);
+                    }
+                }
+                break 1;
+            }
+        }
+    }
+
+    /**
+     * @param $value
+     * @return array|int|mixed|string
+     */
+    public function flattenValue($value)
+    {
+        // Flattening mechanism, disabled
+        if (is_object($value)) {
+            if ($value instanceof Uuid) {
+                $value = (string)$value;
+            } elseif ($value instanceof UuidInterface) {
+                $value = (string)$value->getUuid();
+            } elseif ($value instanceof IdInterface) {
+                $value = (int)$value->getId();
+            } elseif ($value instanceof Collection) {
+                $flatValue = [];
+
+                foreach ($value as $valum) {
+                    $flatValue = $valum instanceof UuidInterface ? $valum->getUuid() : $valum->getId();
+                }
+
+                $value = $flatValue;
+            }
+        }
+
+        return $value;
+    }
+
+    /**
+     * @param string $propertyName
+     * @return string
+     */
+    public static function generateSetterName(string $propertyName): string
+    {
+        return 'set' . self::classify($propertyName);
+    }
+
+    /**
+     * @param string $propertyName
+     * @return array
+     */
+    public static function generateGetterNames(string $propertyName): array
+    {
+        $prefixes = ['get', 'is'];
+
+        $setterNames = [];
+
+        foreach ($prefixes as $prefix) {
+            $setterNames[] = $prefix . self::classify($propertyName);
+        }
+
+        return $setterNames;
+    }
+
+    /**
+     * @param string $word
+     * @return string
+     */
+    public static function camelize(string $word): string
+    {
+        return lcfirst(self::classify($word));
+    }
+
+    /**
+     * @param string $word
+     * @return string
+     */
+    public static function classify(string $word): string
+    {
+        return str_replace([' ', '_', '-'], '', ucwords($word, ' _-'));
+    }
+
+    /**
+     * @param \ReflectionProperty $reflectionProperty
+     * @return bool
+     */
+    protected function hasConvertToObjectAttribute(ReflectionProperty $reflectionProperty): bool
+    {
+        $attributes = $reflectionProperty->getAttributes(ConvertToObject::class);
+
+        if (count($attributes) > 0) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * @param \ReflectionProperty $reflectionProperty
+     * @param \LSB\UtilityBundle\DTO\Model\DTOInterface $dto
+     * @param string $getterName
+     * @param \Symfony\Component\HttpFoundation\Request $request
+     * @param string|null $appCode
+     * @return \LSB\UtilityBundle\DTO\Model\ObjectHolder|null
+     * @throws \Exception
+     */
+    public function convertValueToObjectHolder(
+        ReflectionProperty $reflectionProperty,
+        DTOInterface       $dto,
+        string             $getterName,
+        Request            $request,
+        ?string            $appCode = null
+    ): ?ObjectHolder {
+        $attributes = $reflectionProperty->getAttributes(ConvertToObject::class);
+
+        if (count($attributes) === 0) {
+            return null;
+        }
+
+        //Other ConverToObject should be ignored
+        /** @var ConvertToObject $convertToObjectAttribute */
+        $convertToObjectAttribute = $attributes[0]->newInstance();
+
+        if ($convertToObjectAttribute->getManagerClass()) {
+            $manager = $this->getManagerContainer()->getByManagerClass($convertToObjectAttribute->getManagerClass());
+
+            if (!$manager instanceof ManagerInterface) {
+                return null;
+            }
+
+            switch ($convertToObjectAttribute->getKey()) {
+                case ConvertToObject::KEY_ID:
+                    $id = (int)$dto->$getterName();
+                    $object = $manager->getById($id);
+                    break;
+                case ConvertToObject::KEY_UUID:
+                    $id = (string)$dto->$getterName();
+                    try {
+                        Assert::uuid($id);
+                    } catch (\Exception $e) {
+                        return null;
+                    }
+
+                    $object = $manager->getByUuid($id);
+                    break;
+                default:
+                    $id = null;
+                    $object = null;
+            }
+
+            if ($id && $object) {
+                //Optional type check
+                if ($convertToObjectAttribute->getObjectClass() && !$object instanceof ($convertToObjectAttribute->getObjectClass())) {
+                    throw new \Exception(sprintf("Wrong type. Expected %s got %s", $convertToObjectAttribute->getObjectClass(), get_class($object)));
+                }
+
+                //Optional security check
+                if ($convertToObjectAttribute->getVoterAction()) {
+                    if (!$this->isSubjectGranted($convertToObjectAttribute->getManagerClass(), $request, $convertToObjectAttribute->getVoterAction(), $object)) {
+                        throw new \Exception(sprintf("Access denied. Class: %s, object: %s", $convertToObjectAttribute->getObjectClass(), $id));
+                    }
+                }
+
+                return new ObjectHolder($id, $object);
+            } elseif ($id && !$object && $convertToObjectAttribute->isThrowNotFoundException()) {
+                throw new \Exception(sprintf("Property: %s; Object %s has not been found. ", $reflectionProperty->getName(), $id));
+            }
+
+        }
+
+        return null;
+    }
+
+    /**
+     * @param \ReflectionProperty $reflectionProperty
+     * @return \LSB\UtilityBundle\Attribute\DTOPropertyConfig|null
+     */
+    public function getDTOPropertyConfig(ReflectionProperty $reflectionProperty): ?DTOPropertyConfig
+    {
+        $attributes = $reflectionProperty->getAttributes(DTOPropertyConfig::class);
+
+        if (count($attributes) === 0) {
+            return null;
+        }
+
+        /**
+         * @var DTOPropertyConfig $attribute
+         */
+        $attribute = $attributes[0]->newInstance();
+        return $attribute instanceof DTOPropertyConfig ? $attribute : null;
+    }
 }

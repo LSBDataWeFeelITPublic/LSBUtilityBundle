@@ -4,6 +4,9 @@ namespace LSB\UtilityBundle\Attribute;
 
 use Attribute;
 
+/**
+ * @deprecated Not used anymore.
+ */
 #[Attribute(Attribute::TARGET_CLASS)]
 class DTO
 {

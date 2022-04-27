@@ -4,9 +4,18 @@ namespace LSB\UtilityBundle\Attribute;
 
 use Attribute;
 
+/**
+ * Attribute used by entity converter. Use this attribute to describe custom mapping between DTO and target object.
+ */
 #[Attribute(Attribute::TARGET_PROPERTY)]
 class DTOPropertyConfig
 {
+    /**
+     * @param string|null $objectGetter Target object getter method name
+     * @param string|null $objectSetter Target object setter method name
+     * @param string|null $DTOGetter DTO getter method name
+     * @param string|null $DTOSetter DTO setter method name
+     */
     public function __construct(
         protected ?string $objectGetter = null,
         protected ?string $objectSetter = null,

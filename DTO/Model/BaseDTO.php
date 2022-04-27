@@ -7,7 +7,7 @@ class BaseDTO
     /**
      * @var object|null
      */
-    protected ?object $entity = null;
+    protected ?object $object = null;
 
     /**
      * @var array
@@ -52,18 +52,18 @@ class BaseDTO
     /**
      * @return object|null
      */
-    public function getEntity(): ?object
+    public function getObject(): ?object
     {
-        return $this->entity;
+        return $this->object;
     }
 
     /**
-     * @param object|null $entity
+     * @param object|null $object
      * @return \LSB\UtilityBundle\DTO\Model\BaseDTO
      */
-    public function setEntity(?object $entity): BaseDTO
+    public function setObject(?object $object): BaseDTO
     {
-        $this->entity = $entity;
+        $this->object = $object;
         return $this;
     }
 }

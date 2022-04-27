@@ -9,9 +9,7 @@ use LSB\UtilityBundle\Controller\BaseCRUDApiController;
 use LSB\UtilityBundle\DTO\DTOService;
 use LSB\UtilityBundle\DTO\Model\Output\OutputDTOInterface;
 use LSB\UtilityBundle\DTO\Request\RequestAttributes;
-use LSB\UtilityBundle\DTO\Request\RequestData;
 use LSB\UtilityBundle\DTO\Resource\ResourceHelper;
-use LSB\UtilityBundle\Manager\ManagerInterface;
 use LSB\UtilityBundle\Service\ManagerContainerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -44,106 +42,140 @@ abstract class BaseOutputListener extends BaseListener
         }
 
         $result = null;
-        $statusCode = Response::HTTP_BAD_REQUEST;
+        $statusCode = Response::HTTP_NO_CONTENT;
 
         $requestData = RequestAttributes::getOrderCreateRequestData($event->getRequest());
 
         if (!$requestData->getResource() || $requestData->getResource()->getIsDisabled() === true) {
             return;
         }
+        if (!$requestData->getResource()->getIsActionDisabled()) {
+            if ($requestData->getResource()->getIsCRUD()) {
+                switch ($event->getRequest()->getMethod()) {
+                    case Request::METHOD_PATCH:
+                        if (!$requestData->isObjectFetched()) {
+                            [$result, $statusCode] = $this->prepareNotFoundResponse();
+                            break;
+                        }
+
+                        if (!$requestData->isGranted()) {
+                            [$result, $statusCode] = $this->prepareNotGrantedResponse();
+                            break;
+                        }
+
+                        if ($requestData->getInputDTO() && !$requestData->getInputDTO()->isValid()) {
+                            $result = $requestData->getInputDTO();
+                            break;
+                        }
+
+                        $requestData->setOutputDTO(
+                            $this->processOutputDTO($requestData->getObject(), $requestData->getOutputDTO(), $event->getRequest(), $requestData->getResource())
+                        );
+
+                        $result = $requestData->getOutputDTO();
+                        $statusCode = Response::HTTP_OK;
+                        break;
+                    case Request::METHOD_POST:
+                    case Request::METHOD_PUT:
+                        if (!$requestData->isGranted()) {
+                            [$result, $statusCode] = $this->prepareNotGrantedResponse();
+                            break;
+                        }
+
+                        if ($requestData->getInputDTO() && !$requestData->getInputDTO()->isValid()) {
+                            $result = $requestData->getInputDTO();
+                            break;
+                        }
+                        $statusCode = Response::HTTP_NO_CONTENT;
+                        break;
+                    case Request::METHOD_GET:
+                        if ($requestData->getResource()->getIsCollection()) {
+                            if (!$requestData->isGranted()) {
+                                [$result, $statusCode] = $this->prepareNotGrantedResponse();
+                                break;
+                            }
+
+                            $requestData->setOutputDTO(
+                                $this->processOutputDTO($requestData->getObject(), $requestData->getOutputDTO(), $event->getRequest(), $requestData->getResource())
+                            );
+                        } else {
+                            if (!$requestData->isGranted()) {
+                                [$result, $statusCode] = $this->prepareNotGrantedResponse();
+                                break;
+                            }
+
+                            if (!$requestData->isObjectFetched()) {
+                                [$result, $statusCode] = $this->prepareNotFoundResponse();
+                                break;
+                            }
+
+                            $requestData->setOutputDTO(
+                                $this->processOutputDTO($requestData->getObject(), $requestData->getOutputDTO(), $event->getRequest(), $requestData->getResource())
+                            );
+                        }
 
 
+                        if ($requestData->getOutputDTO() && $requestData->getOutputDTO()->isValid()) {
+                            $result = $requestData->getOutputDTO();
+                            $statusCode = Response::HTTP_OK;
+                            break;
+                        }
 
+                        break;
+                    case Request::METHOD_DELETE:
+                        if (!$requestData->isObjectFetched()) {
+                            [$result, $statusCode] = $this->prepareNotFoundResponse();
+                            break;
+                        }
 
-        switch ($event->getRequest()->getMethod()) {
-            case Request::METHOD_PATCH:
-                if (!$requestData->isObjectFetched()) {
-                    [$result, $statusCode] = $this->prepareNotFoundResponse();
-                    break;
+                        if (!$requestData->isGranted()) {
+                            [$result, $statusCode] = $this->prepareNotGrantedResponse();
+                            break;
+                        }
+
+                        $statusCode = Response::HTTP_OK;
+                        break;
+                    default:
+                        $statusCode = Response::HTTP_NO_CONTENT;
+                        $result = '';
+                        return;
                 }
+            } else {
+                //Non CRUD actions
+                switch ($event->getRequest()->getMethod()) {
+                    case Request::METHOD_GET:
+                    case Request::METHOD_POST:
+                    case Request::METHOD_PUT:
+                    case Request::METHOD_PATCH:
+                    case Request::METHOD_DELETE:
+                        if (!$requestData->isGranted()) {
+                            [$result, $statusCode] = $this->prepareNotGrantedResponse();
+                            break;
+                        }
 
-                if (!$requestData->isGranted()) {
-                    [$result, $statusCode] = $this->prepareNotGrantedResponse();
-                    break;
+                        if (!$requestData->isObjectFetched()) {
+                            [$result, $statusCode] = $this->prepareNotFoundResponse();
+                            break;
+                        }
+
+                        $requestData->setOutputDTO(
+                            $this->processOutputDTO($requestData->getObject(), $requestData->getOutputDTO(), $event->getRequest(), $requestData->getResource())
+                        );
+
+                        $result = $requestData->getOutputDTO();
+                        $statusCode = Response::HTTP_OK;
+                        break;
+                    default:
+                        $statusCode = Response::HTTP_NO_CONTENT;
+                        $result = '';
+                        break;
                 }
-
-                if ($requestData->getInputDTO() && !$requestData->getInputDTO()->isValid()) {
-                    $result = $requestData->getInputDTO();
-                    break;
-                }
-
-                $requestData->setOutputDTO(
-                    $this->processOutputDTO($requestData->getObject(), $requestData->getOutputDTO(), $event->getRequest(), $requestData->getResource())
-                );
-
-                // Czy tu nie powinno być getOutputDTO() ?
-                $result = $requestData->getOutputDTO();
+            }
+        } else {
+            if ($requestData->getResponseContent() && $requestData->getResponseStatusCode() === null) {
                 $statusCode = Response::HTTP_OK;
-                break;
-            case Request::METHOD_POST:
-            case Request::METHOD_PUT:
-                if (!$requestData->isGranted()) {
-                    [$result, $statusCode] = $this->prepareNotGrantedResponse();
-                    break;
-                }
-
-                if ($requestData->getInputDTO() && !$requestData->getInputDTO()->isValid()) {
-                    $result = $requestData->getInputDTO();
-                    break;
-                }
-                $statusCode = Response::HTTP_NO_CONTENT;
-                break;
-            case Request::METHOD_GET:
-                if ($requestData->getResource()->getIsCollection()) {
-                    if (!$requestData->isGranted()) {
-                        [$result, $statusCode] = $this->prepareNotGrantedResponse();
-                        break;
-                    }
-
-                    $requestData->setOutputDTO(
-                        $this->processOutputDTO($requestData->getObject(), $requestData->getOutputDTO(), $event->getRequest(), $requestData->getResource())
-                    );
-                } else {
-                    if (!$requestData->isGranted()) {
-                        [$result, $statusCode] = $this->prepareNotGrantedResponse();
-                        break;
-                    }
-
-                    if (!$requestData->isObjectFetched()) {
-                        [$result, $statusCode] = $this->prepareNotFoundResponse();
-                        break;
-                    }
-
-                    $requestData->setOutputDTO(
-                        $this->processOutputDTO($requestData->getObject(), $requestData->getOutputDTO(), $event->getRequest(), $requestData->getResource())
-                    );
-                }
-
-
-                if ($requestData->getOutputDTO() && $requestData->getOutputDTO()->isValid()) {
-                    $result = $requestData->getOutputDTO();
-                    $statusCode = Response::HTTP_OK;
-                    break;
-                }
-
-                break;
-            case Request::METHOD_DELETE:
-                if (!$requestData->isObjectFetched()) {
-                    [$result, $statusCode] = $this->prepareNotFoundResponse();
-                    break;
-                }
-
-                if (!$requestData->isGranted()) {
-                    [$result, $statusCode] = $this->prepareNotGrantedResponse();
-                    break;
-                }
-
-                $statusCode = Response::HTTP_OK;
-                break;
-            default:
-                return;
+            }
         }
-
 
         $context = new SerializationContext();
         $context
@@ -152,13 +184,21 @@ abstract class BaseOutputListener extends BaseListener
 
         if (count($requestData->getSerializationGroups()) === 0) {
             $groups[] = BaseCRUDApiController::DEFAULT_SERIALIZATION_GROUP;
+        } else {
+            $groups = $requestData->getSerializationGroups();
         }
 
         $context->setGroups($groups);
 
+        $result = $requestData->getResponseContent() ?? $result;
+
         $response = (new Response)
-            ->setContent($this->serializer->serialize($result, $event->getRequest()->getContentType(), $context))
-            ->setStatusCode($statusCode);
+            ->setStatusCode($requestData->getResponseStatusCode() ?? $statusCode);
+
+        if ($result !== null) {
+            $response
+                ->setContent($this->serializer->serialize($result, $event->getRequest()->getContentType(), $context));
+        }
 
         $event->setResponse($response);
     }
@@ -193,31 +233,50 @@ abstract class BaseOutputListener extends BaseListener
         Request             $request,
         Resource            $resource
     ): ?object {
-        $manager = $this->managerContainer->getByManagerClass($resource->getManagerClass());
+        if ($resource->getIsActionDisabled()) {
+            return null;
+        }
 
         if (!$outputDTO) {
             if ($resource->getIsCollection()) {
+                if (!$resource->getCollectionOutputDTOClass()) {
+                    throw new \Exception('Missing output DTO class for collection.');
+                }
+
                 $outputDTO = new ($resource->getCollectionOutputDTOClass())();
             } else {
+                if (!$resource->getOutputDTOClass()) {
+                    throw new \Exception('Missing output DTO class.');
+                }
+
                 $outputDTO = new ($resource->getOutputDTOClass())();
             }
         }
 
-        if (!$manager instanceof ManagerInterface) {
-            //Temporarily exception will be thrown if manager will be not set
-            throw new \Exception();
+        if ($resource->getIsCRUD()) {
+            switch ($request->getMethod()) {
+                case Request::METHOD_GET:
+                case Request::METHOD_PATCH:
+                case Request::METHOD_PUT:
+                    if ($object) {
+                        $outputDTO = $this->DTOService->generateOutputDTO($resource, $object, $outputDTO);
+                    }
+                    break;
+            }
+        } else {
+            switch ($request->getMethod()) {
+                case Request::METHOD_POST:
+                case Request::METHOD_GET:
+                case Request::METHOD_PATCH:
+                case Request::METHOD_PUT:
+                case Request::METHOD_DELETE:
+                    if ($object) {
+                        $outputDTO = $this->DTOService->generateOutputDTO($resource, $object, $outputDTO);
+                    }
+                    break;
+            }
         }
 
-        switch ($request->getMethod()) {
-            case Request::METHOD_GET:
-            case Request::METHOD_PATCH:
-            case Request::METHOD_PUT:
-                if ($object) {
-                    $outputDTO = $this->DTOService->generateOutputDTO($resource, $outputDTO, $object);
-                }
-
-                break;
-        }
 
         return $outputDTO;
     }

@@ -6,6 +6,9 @@ namespace LSB\UtilityBundle\DTO\APIRequest;
 use LSB\UtilityBundle\DTO\Request\RequestData;
 use Symfony\Component\HttpFoundation\Request;
 
+/**
+ * Object injected into Controller which is processed by input DTO listener
+ */
 class APIRequest implements APIRequestInterface
 {
     public function __construct(

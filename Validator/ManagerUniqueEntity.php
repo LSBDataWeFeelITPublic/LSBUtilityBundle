@@ -5,7 +5,7 @@ namespace LSB\UtilityBundle\Validator;
 use Symfony\Component\Validator\Constraint;
 
 /**
- * Constraint for the Unique Entity validator.
+ * Constraint for the Unique Entity validator. Use this constraint to verify the uniqueness of the data that is associated with an entity.
  *
  * @Annotation
  * @Target({"CLASS", "ANNOTATION"})
@@ -32,13 +32,21 @@ class ManagerUniqueEntity extends Constraint
     ];
 
     /**
+     * Validates uniqueness of data for entity
+     *
      * {@inheritdoc}
      *
-     * @param array|string $fields the combination of fields that must contain unique values or a set of options
+     * @param array|string|null $fields the combination of fields in DTO object that must contain unique values or a set of options
+     * @param array|string|null $entityFields the combination of fields in entity object that must contain unique values or a set of options
+     * @param string $manager Manager class dedicated to the specific entity object
+     * @param string $message Error message
+     * @param string $repositoryMethod Method used in repository to fetch object
+     * @param string $errorPath The name of the property that will return a validation error
+     * @param bool $ignoreNull Ignore null values
      */
     public function __construct(
-        $fields,
-        $entityFields,
+        array|string|null $fields,
+        array|string|null $entityFields,
         string $manager,
         string $message = null,
         string $repositoryMethod = null,

@@ -6,6 +6,8 @@ use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\Exception\InvalidArgumentException;
 
 /**
+ * Runs a callback method on the specified manager class for validation of whole DTO object.
+ *
  * @Annotation
  * @Target({"CLASS", "PROPERTY", "METHOD", "ANNOTATION"})
  */
@@ -19,7 +21,8 @@ class ManagerCallback extends Constraint
     /**
      * {@inheritdoc}
      *
-     * @param array|string|callable $method The callback or a set of options
+     * @param string|null $manager Manager class dedicated to the specific entity object
+     * @param string|null $method Method name in manager class
      */
     public function __construct(
         ?string $manager = null,

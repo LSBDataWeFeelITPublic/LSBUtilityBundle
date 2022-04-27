@@ -33,6 +33,7 @@ services:
             - '@security.authorization_checker'
             - '@knp_paginator'
             - '@lsb_utility.dto.resource.helper'
+            - '@request_stack'
 
     lsb_utility.dto.service:
         alias: 'LSB\UtilityBundle\DTO\DTOService'
