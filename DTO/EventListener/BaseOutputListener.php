@@ -10,6 +10,7 @@ use LSB\UtilityBundle\DTO\DTOService;
 use LSB\UtilityBundle\DTO\Model\Output\OutputDTOInterface;
 use LSB\UtilityBundle\DTO\Request\RequestAttributes;
 use LSB\UtilityBundle\DTO\Resource\ResourceHelper;
+use LSB\UtilityBundle\Service\ApiVersionGrabber;
 use LSB\UtilityBundle\Service\ManagerContainerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -24,7 +25,8 @@ abstract class BaseOutputListener extends BaseListener
         protected ValidatorInterface        $validator,
         protected SerializerInterface       $serializer,
         protected ResourceHelper            $resourceHelper,
-        protected DTOService                $DTOService
+        protected DTOService                $DTOService,
+        protected ApiVersionGrabber         $apiVersionGrabber
     ) {
     }
 
@@ -36,13 +38,14 @@ abstract class BaseOutputListener extends BaseListener
      */
     public function onKernelView(ViewEvent $event)
     {
-
         if (!$event->getRequest()) {
             return;
         }
 
         $result = null;
         $statusCode = Response::HTTP_NO_CONTENT;
+
+        $apiVersionNumeric = $this->apiVersionGrabber->getVersion($event->getRequest(), true);
 
         $requestData = RequestAttributes::getOrderCreateRequestData($event->getRequest());
 
@@ -179,7 +182,7 @@ abstract class BaseOutputListener extends BaseListener
 
         $context = new SerializationContext();
         $context
-            ->setVersion('1.0')
+            ->setVersion($apiVersionNumeric)
             ->setSerializeNull(true);
 
         if (count($requestData->getSerializationGroups()) === 0) {

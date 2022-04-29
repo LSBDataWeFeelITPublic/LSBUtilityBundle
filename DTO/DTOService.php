@@ -30,6 +30,7 @@ use ReflectionClass;
 use ReflectionProperty;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\PropertyAccess\PropertyAccess;
 use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
 use Webmozart\Assert\Assert;
 
@@ -92,7 +93,12 @@ class DTOService
 
 
         if ($resource->getDeserializationType() === Resource::TYPE_DATA_TRANSFORMER) {
-            $dataTransformer = $this->dataTransformerService->getDataTransformer($inputDTO, $manager->getResourceEntityClass(), []);
+            $objectClass = $manager ? $manager->getResourceEntityClass() : $resource->getObjectClass();
+            if (!$objectClass) {
+                throw new \Exception('Object class is missing.');
+            }
+
+            $dataTransformer = $this->dataTransformerService->getDataTransformer($inputDTO, $objectClass, []);
         } else {
             $dataTransformer = null;
         }
@@ -245,7 +251,9 @@ class DTOService
                 $this->populateDtoWithEntity($object, $outputDTO);
             }
         } else {
+
             if ($deserializationType === Resource::TYPE_DATA_TRANSFORMER) {
+
                 $dataTransformer = $this->dataTransformerService->getDataTransformer($object, get_class($outputDTO), []);
                 if ($dataTransformer) {
                     $outputDTO = $dataTransformer->transform(
@@ -255,7 +263,6 @@ class DTOService
                     );
                 }
             } else {
-
                 $this->populateDtoWithEntity($object, $outputDTO);
             }
         }
@@ -600,6 +607,11 @@ class DTOService
             $resource = $entityAttribute->newInstance();
         }
 
+        if (!$resource && $reflectionProperty->getType()) {
+            $resource = new Resource(outputDTOClass: $reflectionProperty->getType()->getName());
+        }
+
+
         if ($resource && $LSResource) {
             $resource = $this->resourceHelper->mergeResource($LSResource, $resource);
         } elseif (!$resource && $LSResource) {
@@ -665,14 +677,14 @@ class DTOService
             if (array_search($reflectionProperty->getName(), self::$excludedProps) !== false) {
                 continue;
             }
-            $DTOObjectGetters = [];
+            $DTOObjectGetter = null;
             $setterMethod = null;
 
             $DTOPropertyConfig = self::getDTOPropertyConfig($reflectionProperty);
 
             if ($DTOPropertyConfig) {
                 if ($DTOPropertyConfig->getDTOGetter()) {
-                    $DTOObjectGetters = [$DTOPropertyConfig->getDTOGetter()];
+                    $DTOObjectGetter = $DTOPropertyConfig->getDTOGetter();
                 }
 
                 if ($DTOPropertyConfig->getObjectSetter()) {
@@ -680,33 +692,44 @@ class DTOService
                 }
             }
 
-            if (count($DTOObjectGetters) === 0) {
-                $DTOObjectGetters = $this->generateGetterNames($reflectionProperty->getName());
+            $propertyAccessor = PropertyAccess::createPropertyAccessor();
+
+            if ($setterMethod && !method_exists($targetObject, $setterMethod)) {
+                throw new \Exception(sprintf("Setter %s does not exist", $setterMethod));
             }
 
-            $setterMethod = ($setterMethod ?? null) ?: $this->generateSetterName($reflectionProperty->getName());
-
-            foreach ($DTOObjectGetters as $DTOObjectGetter) {
+            if ($DTOObjectGetter) {
                 if (!method_exists($dto, $DTOObjectGetter)) {
+                    throw new \Exception(sprintf("Getter %s not exists.", $DTOObjectGetter));
+                }
+                $dtoValue = $dto->$DTOObjectGetter();
+            } else {
+                if (!$propertyAccessor->isReadable($dto, $reflectionProperty->getName())) {
                     continue;
                 }
+                $dtoValue = $propertyAccessor->getValue($dto, $reflectionProperty->getName());
+            }
 
-                if (method_exists($targetObject, $setterMethod)) {
-                    $dtoValue = $dto->$DTOObjectGetter();
-                    if ($convertIdsIntoEntities && $this->hasConvertToObjectAttribute($reflectionProperty)) {
-                        $objectHolder = $this->convertValueToObjectHolder($reflectionProperty, $dto, $DTOObjectGetter, $request);
 
-                        if ($objectHolder instanceof ObjectHolder && $objectHolder->getObject()) {
-                            $targetObject->$setterMethod($objectHolder->getObject());
-                        } else {
-                            $targetObject->$setterMethod(null);
-                        }
-                    } else {
-                        $targetObject->$setterMethod($dtoValue);
-                    }
+            if ($convertIdsIntoEntities && $this->hasConvertToObjectAttribute($reflectionProperty)) {
+                $objectHolder = $this->convertValueToObjectHolder($reflectionProperty, $dto, $DTOObjectGetter, $request);
+
+                if ($objectHolder instanceof ObjectHolder && $objectHolder->getObject()) {
+                    $targetValue = $objectHolder->getObject();
+                } else {
+                    $targetValue = null;
                 }
+            } else {
+                $targetValue = $dtoValue;
+            }
 
-                break;
+            if ($setterMethod) {
+                $targetObject->$setterMethod($targetValue);
+            } else {
+                if (!$propertyAccessor->isWritable($targetObject, $reflectionProperty->getName())) {
+                    continue;
+                }
+                $propertyAccessor->setValue($targetObject, $reflectionProperty->getName(), $targetValue);
             }
         }
     }
@@ -728,6 +751,9 @@ class DTOService
         $reflectionProperties = $reflectionDTO->getProperties($propertiesFilter);
         $nestingLevel = $allowNestedObject ? self::NESTING_LEVEL_ALLOWED : self::NESTING_LEVEL_BLOCKED;
 
+        /**
+         * @var ReflectionProperty $reflectionProperty
+         */
         foreach ($reflectionProperties as $reflectionProperty) {
             if (array_search($reflectionProperty->getName(), self::$excludedProps) !== false) {
                 continue;
@@ -750,6 +776,7 @@ class DTOService
                         $requestDTO->$setterMethod($value);
                     } elseif (is_object($value)) {
                         $itemResource = $this->getItemResource($this->getRealClass($value), $reflectionProperty, true);
+
                         $valueDTO = $this->generateOutputDTO(
                             resource: $itemResource,
                             object: $value,

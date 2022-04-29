@@ -33,7 +33,7 @@ abstract class BaseApiController extends AbstractFOSRestController
     const REQUEST_QUERY_PARAMETER_PAGE = 'page';
     const REQUEST_QUERY_PARAMETER_LIMIT = 'limit';
 
-    const DEFAULT_SERIALIZATION_GROUP = 'Api';
+    const DEFAULT_SERIALIZATION_GROUP = 'Default';
 
     const CONTROLLER_NAMESPACE = 'Controller';
 

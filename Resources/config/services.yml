@@ -72,6 +72,12 @@ services:
     lsb_utility.dto.data_transformer.service: '@LSB\UtilityBundle\DTO\DataTransformer\DataTransformerService'
 
 
+    LSB\UtilityBundle\Service\ApiVersionGrabber:
+        arguments:
+            - '@request_stack'
+
+    lsb_utility.api.version_grabber: '@LSB\UtilityBundle\Service\ApiVersionGrabber'
+
     ### Validator
     LSB\UtilityBundle\Validator\ManagerChoiceValidator:
         arguments:

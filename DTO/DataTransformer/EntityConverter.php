@@ -18,6 +18,9 @@ use ReflectionProperty;
 use Symfony\Component\HttpFoundation\Request;
 use Webmozart\Assert\Assert;
 
+/**
+ * @deprecated
+ */
 class EntityConverter
 {
 

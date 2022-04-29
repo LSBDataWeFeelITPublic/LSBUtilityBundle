@@ -14,6 +14,7 @@ use LSB\UtilityBundle\DTO\Resource\ResourceHelper;
 use LSB\UtilityBundle\Manager\ManagerInterface;
 use LSB\UtilityBundle\Security\BaseObjectVoter;
 use LSB\UtilityBundle\Serializer\ObjectConstructor\ExistingObjectConstructor;
+use LSB\UtilityBundle\Service\ApiVersionGrabber;
 use LSB\UtilityBundle\Service\ManagerContainerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
@@ -31,7 +32,8 @@ abstract class BaseInputListener extends BaseListener
         protected ResourceHelper                $resourceHelper,
         protected DataTransformerService        $dataTransformerService,
         protected DTOService                    $DTOService,
-        protected AuthorizationCheckerInterface $authorizationChecker
+        protected AuthorizationCheckerInterface $authorizationChecker,
+        protected ApiVersionGrabber             $apiVersionGrabber
     ) {
     }
 
@@ -44,6 +46,8 @@ abstract class BaseInputListener extends BaseListener
     {
         //Request object
         $request = $requestEvent->getRequest();
+
+        $apiVersion = $this->apiVersionGrabber->getVersion($request, true);
 
         //in the beginning we create RequestData object
         $requestData = RequestAttributes::getOrderCreateRequestData($request);
@@ -107,7 +111,7 @@ abstract class BaseInputListener extends BaseListener
                     //$requestData->setInputDTO($inputDTO);
                     break;
                 case Request::METHOD_DELETE:
-                    if (!$resource->getIsActionDisabled()) {
+                    if ($resource->getIsActionDisabled()) {
                         break;
                     }
 
@@ -130,7 +134,7 @@ abstract class BaseInputListener extends BaseListener
 
                     break;
                 case Request::METHOD_GET:
-                    if (!$resource->getIsActionDisabled()) {
+                    if ($resource->getIsActionDisabled()) {
                         break;
                     }
 
