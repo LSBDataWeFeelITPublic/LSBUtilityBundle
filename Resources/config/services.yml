@@ -19,10 +19,22 @@ services:
         tags:
             - { name: form.type }
 
+    ### Serializer
+
     lsb_utility.jms.serializer.existing_object_constructor:
         class: 'LSB\UtilityBundle\Serializer\ObjectConstructor\ExistingObjectConstructor'
         arguments:
             - '@jms_serializer.unserialize_object_constructor'
+
+    lsb_utility.jms.serializer.handler.money:
+        class: 'LSB\UtilityBundle\Serializer\Handler\MoneyHandler'
+        tags:
+            - { name: jms_serializer.subscribing_handler }
+
+    lsb_utility.jms.serializer.handler.value:
+        class: 'LSB\UtilityBundle\Serializer\Handler\ValueHandler'
+        tags:
+            - { name: jms_serializer.subscribing_handler }
 
     ### DTO
 
@@ -85,14 +97,20 @@ services:
         tags:
             - { name: validator.constraint_validator }
 
+    lsb_utility.validator.manager_choice: '@LSB\UtilityBundle\Validator\ManagerChoiceValidator'
+
     LSB\UtilityBundle\Validator\ManagerUniqueEntityValidator:
         arguments:
             - '@lsb_utility.manager.container'
         tags:
             - { name: validator.constraint_validator }
 
+    lsb_utility.validator.manager_unique_entity: '@LSB\UtilityBundle\Validator\ManagerUniqueEntityValidator'
+
     LSB\UtilityBundle\Validator\ManagerCallbackValidator:
         arguments:
             - '@lsb_utility.manager.container'
         tags:
             - { name: validator.constraint_validator }
+
+    lsb_utility.validator.manager_callback: '@LSB\UtilityBundle\Validator\ManagerCallbackValidator'

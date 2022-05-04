@@ -14,6 +14,8 @@ use Money\Money;
  */
 class ValueHelper
 {
+    const DEFAULT_PRECISION = 2;
+
     /**
      * @param float|string|null $value
      * @return float|null
@@ -119,11 +121,15 @@ class ValueHelper
     /**
      * @param int|float|null $amount
      * @param string|null $unit
-     * @param int $precision
+     * @param int|null $precision
      * @return Value|null
      */
-    public static function convertToValue(int|float|null $amount, ?string $unit = null, int $precision = 2): ?Value
+    public static function convertToValue(int|float|null $amount, ?string $unit = null, ?int $precision = null): ?Value
     {
+        if ($precision === null) {
+            $precision = self::DEFAULT_PRECISION;
+        }
+
         if ($amount === null) {
             return null;
         }

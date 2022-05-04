@@ -68,6 +68,7 @@ abstract class BaseOutputListener extends BaseListener
 
                         if ($requestData->getInputDTO() && !$requestData->getInputDTO()->isValid()) {
                             $result = $requestData->getInputDTO();
+                            $statusCode = Response::HTTP_BAD_REQUEST;
                             break;
                         }
 
@@ -87,9 +88,10 @@ abstract class BaseOutputListener extends BaseListener
 
                         if ($requestData->getInputDTO() && !$requestData->getInputDTO()->isValid()) {
                             $result = $requestData->getInputDTO();
+                            $statusCode = Response::HTTP_BAD_REQUEST;
                             break;
                         }
-                        $statusCode = Response::HTTP_NO_CONTENT;
+
                         break;
                     case Request::METHOD_GET:
                         if ($requestData->getResource()->getIsCollection()) {
@@ -194,7 +196,7 @@ abstract class BaseOutputListener extends BaseListener
         $context->setGroups($groups);
 
         $result = $requestData->getResponseContent() ?? $result;
-
+        
         $response = (new Response)
             ->setStatusCode($requestData->getResponseStatusCode() ?? $statusCode);
 

@@ -45,9 +45,4 @@ abstract class BaseInputDTO extends BaseDTO implements InputDTOInterface
         $this->errors = $errors;
         return $this;
     }
-
-    public function postValidation(): void
-    {
-
-    }
 }

@@ -31,6 +31,7 @@ use ReflectionProperty;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\PropertyAccess\PropertyAccess;
+use Symfony\Component\PropertyAccess\PropertyAccessor;
 use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
 use Webmozart\Assert\Assert;
 
@@ -679,6 +680,8 @@ class DTOService
             }
             $DTOObjectGetter = null;
             $setterMethod = null;
+            $DTOPropertyName = $reflectionProperty->getName();
+            $targetObjectPropertyName = $reflectionProperty->getName();
 
             $DTOPropertyConfig = self::getDTOPropertyConfig($reflectionProperty);
 
@@ -689,6 +692,14 @@ class DTOService
 
                 if ($DTOPropertyConfig->getObjectSetter()) {
                     $setterMethod = $DTOPropertyConfig->getObjectSetter();
+                }
+
+                if ($DTOPropertyConfig->getObjectPropertyName()) {
+                    $targetObjectPropertyName = $DTOPropertyConfig->getObjectPropertyName();
+                }
+
+                if ($DTOPropertyConfig->getDTOPropertyName()) {
+                    $DTOPropertyName = $DTOPropertyConfig->getDTOPropertyName();
                 }
             }
 
@@ -703,16 +714,15 @@ class DTOService
                     throw new \Exception(sprintf("Getter %s not exists.", $DTOObjectGetter));
                 }
                 $dtoValue = $dto->$DTOObjectGetter();
+            } elseif ($propertyAccessor->isReadable($dto, $DTOPropertyName)) {
+                $dtoValue = $propertyAccessor->getValue($dto, $DTOPropertyName);
             } else {
-                if (!$propertyAccessor->isReadable($dto, $reflectionProperty->getName())) {
-                    continue;
-                }
-                $dtoValue = $propertyAccessor->getValue($dto, $reflectionProperty->getName());
+                continue;
             }
 
 
             if ($convertIdsIntoEntities && $this->hasConvertToObjectAttribute($reflectionProperty)) {
-                $objectHolder = $this->convertValueToObjectHolder($reflectionProperty, $dto, $DTOObjectGetter, $request);
+                $objectHolder = $this->convertValueToObjectHolder($reflectionProperty, $dto, $DTOObjectGetter, $DTOPropertyName, $request);
 
                 if ($objectHolder instanceof ObjectHolder && $objectHolder->getObject()) {
                     $targetValue = $objectHolder->getObject();
@@ -725,11 +735,10 @@ class DTOService
 
             if ($setterMethod) {
                 $targetObject->$setterMethod($targetValue);
+            } elseif ($propertyAccessor->isWritable($targetObject, $targetObjectPropertyName)) {
+                $propertyAccessor->setValue($targetObject, $targetObjectPropertyName, $targetValue);
             } else {
-                if (!$propertyAccessor->isWritable($targetObject, $reflectionProperty->getName())) {
-                    continue;
-                }
-                $propertyAccessor->setValue($targetObject, $reflectionProperty->getName(), $targetValue);
+                continue;
             }
         }
     }
@@ -748,58 +757,99 @@ class DTOService
     {
         $propertiesFilter = ReflectionProperty::IS_PUBLIC | ReflectionProperty::IS_PROTECTED | ReflectionProperty::IS_PRIVATE;
         $reflectionDTO = new ReflectionClass($requestDTO);
-        $reflectionProperties = $reflectionDTO->getProperties($propertiesFilter);
+        $reflectionPropertiesDTO = $reflectionDTO->getProperties($propertiesFilter);
         $nestingLevel = $allowNestedObject ? self::NESTING_LEVEL_ALLOWED : self::NESTING_LEVEL_BLOCKED;
 
         /**
-         * @var ReflectionProperty $reflectionProperty
+         * @var ReflectionProperty $reflectionPropertyDTO
          */
-        foreach ($reflectionProperties as $reflectionProperty) {
-            if (array_search($reflectionProperty->getName(), self::$excludedProps) !== false) {
+        foreach ($reflectionPropertiesDTO as $reflectionPropertyDTO) {
+            if (array_search($reflectionPropertyDTO->getName(), self::$excludedProps) !== false) {
                 continue;
             }
 
-            $targetObjectGetters = $this->generateGetterNames($reflectionProperty->getName());
+            $DTOPropertyConfig = self::getDTOPropertyConfig($reflectionPropertyDTO);
 
-            foreach ($targetObjectGetters as $targetObjectGetter) {
-                if (!method_exists($targetObject, $targetObjectGetter)) {
-                    continue;
+            $targetObjectGetter = null;
+            $setterMethod = null;
+            $DTOPropertyName = $reflectionPropertyDTO->getName();
+            $targetObjectPropertyName = $reflectionPropertyDTO->getName();
+
+            if ($DTOPropertyConfig) {
+                if ($DTOPropertyConfig->getObjectGetter()) {
+                    $targetObjectGetter = $DTOPropertyConfig->getObjectGetter();
                 }
 
-                //TODO refactor, use PropertyAccessor
-                $setterMethod = $this->generateSetterName($reflectionProperty->getName());
-
-                if (method_exists($requestDTO, $setterMethod)) {
-                    $value = $targetObject->$targetObjectGetter();
-
-                    if (!is_object($value) && !is_iterable($value)) {
-                        $requestDTO->$setterMethod($value);
-                    } elseif (is_object($value)) {
-                        $itemResource = $this->getItemResource($this->getRealClass($value), $reflectionProperty, true);
-
-                        $valueDTO = $this->generateOutputDTO(
-                            resource: $itemResource,
-                            object: $value,
-                            level: $nestingLevel
-                        );
-                        $requestDTO->$setterMethod($valueDTO);
-                    } elseif (is_iterable($value)) {
-                        $array = [];
-
-                        foreach ($value as $item) {
-                            $itemResource = $this->getItemResource($this->getRealClass($item), $reflectionProperty, true);
-                            $itemDTO = $this->generateOutputDTO(
-                                resource: $itemResource,
-                                object: $item,
-                                level: $nestingLevel
-                            );
-                            $array[] = $itemDTO;
-                        }
-
-                        $requestDTO->$setterMethod($array);
-                    }
+                if ($DTOPropertyConfig->getDTOSetter()) {
+                    $setterMethod = $DTOPropertyConfig->getDTOSetter();
                 }
-                break 1;
+
+                if ($DTOPropertyConfig->getDTOSetter()) {
+                    $setterMethod = $DTOPropertyConfig->getDTOSetter();
+                }
+
+                if ($DTOPropertyConfig->getObjectPropertyName()) {
+                    $targetObjectPropertyName = $DTOPropertyConfig->getObjectPropertyName();
+                }
+
+                if ($DTOPropertyConfig->getDTOPropertyName()) {
+                    $DTOPropertyName = $DTOPropertyConfig->getDTOPropertyName();
+                }
+            }
+
+            $propertyAccessor = PropertyAccess::createPropertyAccessor();
+
+
+            if ($setterMethod && !method_exists($requestDTO, $setterMethod)) {
+                throw new \Exception(sprintf("Setter method %s not found", $setterMethod));
+            }
+
+            if ($targetObjectGetter && !method_exists($targetObject, $targetObjectGetter)) {
+                throw new \Exception(sprintf("Getter method %s not found", $targetObjectGetter));
+            }
+
+            if ($targetObjectGetter) {
+                $value = $targetObject->$targetObjectGetter();
+            } elseif ($propertyAccessor->isReadable($targetObject, $targetObjectPropertyName)) {
+                $value = $propertyAccessor->getValue($targetObject, $targetObjectPropertyName);
+            } else {
+                continue;
+            }
+
+            if (!is_object($value) && !is_iterable($value)) {
+                $valueDTO = $value;
+            } elseif (is_object($value)) {
+                $itemResource = $this->getItemResource($this->getRealClass($value), $reflectionPropertyDTO, true);
+
+                $valueDTO = $this->generateOutputDTO(
+                    resource: $itemResource,
+                    object: $value,
+                    level: $nestingLevel
+                );
+            } elseif (is_iterable($value)) {
+                $valueDTO = [];
+
+                foreach ($value as $item) {
+                    $itemResource = $this->getItemResource($this->getRealClass($item), $reflectionPropertyDTO, true);
+                    $itemDTO = $this->generateOutputDTO(
+                        resource: $itemResource,
+                        object: $item,
+                        level: $nestingLevel
+                    );
+                    $valueDTO[] = $itemDTO;
+                }
+            } else {
+                $valueDTO = null;
+            }
+
+            $value = null;
+
+            if ($setterMethod) {
+                $requestDTO->$setterMethod($value);
+            } elseif ($propertyAccessor->isWritable($requestDTO, $DTOPropertyName)) {
+                $propertyAccessor->setValue($requestDTO, $DTOPropertyName, $valueDTO);
+            } else {
+                continue;
             }
         }
     }
@@ -903,7 +953,8 @@ class DTOService
     public function convertValueToObjectHolder(
         ReflectionProperty $reflectionProperty,
         DTOInterface       $dto,
-        string             $getterName,
+        ?string            $getterName,
+        ?string            $propertyName,
         Request            $request,
         ?string            $appCode = null
     ): ?ObjectHolder {
@@ -924,13 +975,31 @@ class DTOService
                 return null;
             }
 
+            if (!$propertyName) {
+                $propertyName = $reflectionProperty->getName();
+            }
+
+            $propertyAccessor = new PropertyAccessor();
+
+            if ($getterName) {
+                $id = $dto->$getterName();
+            } elseif ($propertyName) {
+                if (!$propertyAccessor->isReadable($dto, $propertyName)) {
+                    throw new \Exception(sprintf('Property %s is not readable.', $propertyName));
+                }
+
+                $id = $propertyAccessor->getValue($dto, $propertyName);
+            } else {
+                throw new \Exception('Getter or property name is required.');
+            }
+
             switch ($convertToObjectAttribute->getKey()) {
                 case ConvertToObject::KEY_ID:
-                    $id = (int)$dto->$getterName();
+                    $id = (int) $id;
                     $object = $manager->getById($id);
                     break;
                 case ConvertToObject::KEY_UUID:
-                    $id = (string)$dto->$getterName();
+                    $id = (string) $id;
                     try {
                         Assert::uuid($id);
                     } catch (\Exception $e) {

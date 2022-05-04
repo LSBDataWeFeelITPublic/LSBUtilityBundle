@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace LSB\UtilityBundle\DTO\EventListener;
 
 use JMS\Serializer\DeserializationContext;
+use JMS\Serializer\Exception\RuntimeException;
 use JMS\Serializer\SerializerInterface;
 use LSB\UtilityBundle\Attribute\Resource;
 use LSB\UtilityBundle\DTO\DataTransformer\DataTransformerService;
@@ -289,23 +290,34 @@ abstract class BaseInputListener extends BaseListener
             throw new \Exception('Input Create DTO Class is missing.');
         }
 
-        $dto = $this->serializer->deserialize(
-            $request->getContent(),
-            $resource->getInputCreateDTOClass(),
-            $request->getFormat($request->headers->get('Content-Type')),
-            $context
-        );
+        try {
+            $dto = $this->serializer->deserialize(
+                $request->getContent(),
+                $resource->getInputCreateDTOClass(),
+                $request->getFormat($request->headers->get('Content-Type')),
+                $context
+            );
 
-        /**
-         * @var ConstraintViolationList $error
-         */
-        $errors = $this->validator->validate($dto);
+            /**
+             * @var ConstraintViolationList $error
+             */
+            $errors = $this->validator->validate($dto);
 
-        /**
-         * @var ConstraintViolation $error
-         */
-        foreach ($errors as $error) {
-            $dto->addError($error->getPropertyPath(), $error->getMessage());
+            /**
+             * @var ConstraintViolation $error
+             */
+            foreach ($errors as $error) {
+                $dto->addError($error->getPropertyPath(), $error->getMessage());
+            }
+        } catch (RuntimeException $e) {
+            if (!$dto) {
+                $dto = new ($resource->getInputUpdateDTOClass())();
+                if (!$dto instanceof InputDTOInterface) {
+                    throw new \Exception('Input DTO class must implement InputDTOInterface.');
+                }
+            }
+
+            $dto->addError(InputDTOInterface::ERROR_DESERIALIZATION, $e->getMessage());
         }
 
         return $dto;

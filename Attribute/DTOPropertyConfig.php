@@ -19,8 +19,10 @@ class DTOPropertyConfig
     public function __construct(
         protected ?string $objectGetter = null,
         protected ?string $objectSetter = null,
+        protected ?string $objectPropertyName = null,
         protected ?string $DTOGetter = null,
-        protected ?string $DTOSetter = null
+        protected ?string $DTOSetter = null,
+        protected ?string $DTOPropertyName = null,
     ) {
     }
 
@@ -93,6 +95,42 @@ class DTOPropertyConfig
     public function setDTOSetter(?string $DTOSetter): DTOPropertyConfig
     {
         $this->DTOSetter = $DTOSetter;
+        return $this;
+    }
+
+    /**
+     * @return string|null
+     */
+    public function getObjectPropertyName(): ?string
+    {
+        return $this->objectPropertyName;
+    }
+
+    /**
+     * @param string|null $objectPropertyName
+     * @return DTOPropertyConfig
+     */
+    public function setObjectPropertyName(?string $objectPropertyName): DTOPropertyConfig
+    {
+        $this->objectPropertyName = $objectPropertyName;
+        return $this;
+    }
+
+    /**
+     * @return string|null
+     */
+    public function getDTOPropertyName(): ?string
+    {
+        return $this->DTOPropertyName;
+    }
+
+    /**
+     * @param string|null $DTOPropertyName
+     * @return DTOPropertyConfig
+     */
+    public function setDTOPropertyName(?string $DTOPropertyName): DTOPropertyConfig
+    {
+        $this->DTOPropertyName = $DTOPropertyName;
         return $this;
     }
 }
