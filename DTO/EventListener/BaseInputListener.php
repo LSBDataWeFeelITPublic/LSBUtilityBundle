@@ -50,13 +50,13 @@ abstract class BaseInputListener extends BaseListener
 
         $apiVersion = $this->apiVersionGrabber->getVersion($request, true);
 
-        //in the beginning we create RequestData object
-        $requestData = RequestAttributes::getOrderCreateRequestData($request);
+        //at the beginning we create RequestData object
+        $requestData = RequestAttributes::getOrCreateRequestData($request);
 
         $resource = $this->resourceHelper->fetchResource($request);
         $requestData->setResource($resource);
 
-        if (!$resource instanceof Resource || $resource->getisDisabled() === true) {
+        if (!$resource instanceof Resource || $resource->getIsDisabled() === true) {
             return null;
         }
 
@@ -69,7 +69,8 @@ abstract class BaseInputListener extends BaseListener
             switch ($request->getMethod()) {
                 case Request::METHOD_POST:
                     if (!$resource->getIsSecurityCheckDisabled()) {
-                        if ($this->DTOService->isGranted($resource, $request, BaseObjectVoter::ACTION_POST, null)) {
+                        //TODO do weryfikacji czy subject powinien być pusty, do sprawdzenia czy akcja votera nie powinna dać się nadpisywać
+                        if ($this->DTOService->isGranted($resource, $request, $resource->getVoterAction() ?? BaseObjectVoter::ACTION_POST, null)) {
                             $requestData->setIsGranted(true);
                         } else {
                             break;
@@ -93,7 +94,7 @@ abstract class BaseInputListener extends BaseListener
                     $requestData->setInputDTO($inputDTO);
 
                     if (!$resource->getIsSecurityCheckDisabled()) {
-                        if ($inputDTO->getObject() && $this->DTOService->isGranted($resource, $request, BaseObjectVoter::ACTION_POST, $inputDTO->getObject())) {
+                        if ($inputDTO->getObject() && $this->DTOService->isGranted($resource, $request, $resource->getVoterAction() ?? ($request->getMethod() === Request::METHOD_PUT ? BaseObjectVoter::ACTION_PUT : BaseObjectVoter::ACTION_PATCH), $inputDTO->getObject())) {
                             $requestData->setIsGranted(true);
                         } else {
                             break;
@@ -122,7 +123,7 @@ abstract class BaseInputListener extends BaseListener
                     }
 
                     if (!$resource->getIsSecurityCheckDisabled()) {
-                        if ($requestData->getObject() && $this->DTOService->isGranted($resource, $request, BaseObjectVoter::ACTION_DELETE, $requestData->getObject())) {
+                        if ($requestData->getObject() && $this->DTOService->isGranted($resource, $request, $resource->getVoterAction() ?? BaseObjectVoter::ACTION_DELETE, $requestData->getObject())) {
                             $requestData->setIsGranted(true);
                         } else {
                             break;
@@ -143,7 +144,7 @@ abstract class BaseInputListener extends BaseListener
                     if ($requestData->getResource()->getIsCollection()) {
 
                         if (!$resource->getIsSecurityCheckDisabled()) {
-                            if (!$this->DTOService->isGranted($resource, $request, BaseObjectVoter::ACTION_CGET, $requestData->getObject())) {
+                            if (!$this->DTOService->isGranted($resource, $request, $resource->getVoterAction() ?? BaseObjectVoter::ACTION_CGET, $requestData->getObject())) {
                                 $requestData->setIsGranted(false);
                                 break;
                             }
@@ -162,7 +163,7 @@ abstract class BaseInputListener extends BaseListener
                             $requestData->setObject($object);
                         }
                         if (!$resource->getIsSecurityCheckDisabled()) {
-                            if ($requestData->getObject() && $this->DTOService->isGranted($resource, $request, BaseObjectVoter::ACTION_GET, $requestData->getObject())) {
+                            if ($requestData->getObject() && $this->DTOService->isGranted($resource, $request, $resource->getVoterAction() ?? BaseObjectVoter::ACTION_GET, $requestData->getObject())) {
                                 $requestData->setIsGranted(true);
                             } else {
                                 break;

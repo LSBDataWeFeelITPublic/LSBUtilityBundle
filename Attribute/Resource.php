@@ -15,13 +15,15 @@ class Resource
     const TYPE_DATA_TRANSFORMER = 2;
 
     /**
+     * Do not set default values
+     *
      * @param string|null $objectClass Class of the object to which the conversion is carried out: input dto -> object -> output dto
      * @param string|null $managerClass Manager class that handles the object (only for entities)
      * @param string|null $inputCreateDTOClass Input DTO object class for POST request method (creating a new object)
      * @param string|null $inputUpdateDTOClass Input DTO object class for PUT / PATCH request method (update of existing object
      * @param string|null $outputDTOClass Output DTO class
-     * @param int|null $deserializationType Deserialization mode (automatic or data transformer)
-     * @param int|null $collectionItemDeserializationType Deserialization mode for nested collections (automatic or data transformer)
+     * @param int|null $serializationType Deserialization mode (automatic or data transformer)
+     * @param int|null $collectionItemSerializationType Deserialization mode for nested collections (automatic or data transformer)
      * @param bool|null $isDisabled Totally blocks input/output listeners
      * @param bool|null $isCollection Designation of data type - collection
      * @param string|null $collectionOutputDTOClass The DTO's output class of the collection
@@ -34,11 +36,12 @@ class Resource
     public function __construct(
         protected ?string $objectClass = null,
         protected ?string $managerClass = null,
+        protected ?string $inputDTOClass = null,
         protected ?string $inputCreateDTOClass = null,
         protected ?string $inputUpdateDTOClass = null,
         protected ?string $outputDTOClass = null,
-        protected ?int    $deserializationType = self::TYPE_AUTO,
-        protected ?int    $collectionItemDeserializationType = self::TYPE_AUTO,
+        protected ?int    $serializationType = null,
+        protected ?int    $collectionItemSerializationType = null,
         protected ?bool   $isDisabled = null,
         protected ?bool   $isCollection = null,
         protected ?string $collectionOutputDTOClass = null,
@@ -87,10 +90,15 @@ class Resource
     }
 
     /**
+     * @param bool $checkCreate
      * @return string|null
      */
-    public function getInputCreateDTOClass(): ?string
+    public function getInputCreateDTOClass(bool $checkCreate = true): ?string
     {
+        if ($checkCreate && !$this->inputCreateDTOClass) {
+            return $this->getInputDTOClass();
+        }
+
         return $this->inputCreateDTOClass;
     }
 
@@ -111,7 +119,7 @@ class Resource
     public function getInputUpdateDTOClass(bool $checkCreate = true): ?string
     {
         if ($checkCreate && !$this->inputUpdateDTOClass) {
-            return $this->getInputCreateDTOClass();
+            return $this->getInputDTOClass();
         }
 
         return $this->inputUpdateDTOClass;
@@ -184,18 +192,18 @@ class Resource
     /**
      * @return int|null
      */
-    public function getDeserializationType(): ?int
+    public function getSerializationType(): ?int
     {
-        return $this->deserializationType;
+        return $this->serializationType;
     }
 
     /**
-     * @param int|null $deserializationType
+     * @param int|null $serializationType
      * @return Resource
      */
-    public function setDeserializationType(?int $deserializationType): Resource
+    public function setSerializationType(?int $serializationType): Resource
     {
-        $this->deserializationType = $deserializationType;
+        $this->serializationType = $serializationType;
         return $this;
     }
 
@@ -220,18 +228,18 @@ class Resource
     /**
      * @return int|null
      */
-    public function getCollectionItemDeserializationType(): ?int
+    public function getCollectionItemSerializationType(): ?int
     {
-        return $this->collectionItemDeserializationType;
+        return $this->collectionItemSerializationType;
     }
 
     /**
-     * @param int|null $collectionItemDeserializationType
+     * @param int|null $collectionItemSerializationType
      * @return Resource
      */
-    public function setCollectionItemDeserializationType(?int $collectionItemDeserializationType): Resource
+    public function setCollectionItemSerializationType(?int $collectionItemSerializationType): Resource
     {
-        $this->collectionItemDeserializationType = $collectionItemDeserializationType;
+        $this->collectionItemSerializationType = $collectionItemSerializationType;
         return $this;
     }
 
@@ -322,6 +330,24 @@ class Resource
     public function setVoterAction(?string $voterAction): Resource
     {
         $this->voterAction = $voterAction;
+        return $this;
+    }
+
+    /**
+     * @return string|null
+     */
+    public function getInputDTOClass(): ?string
+    {
+        return $this->inputDTOClass;
+    }
+
+    /**
+     * @param string|null $inputDTOClass
+     * @return Resource
+     */
+    public function setInputDTOClass(?string $inputDTOClass): Resource
+    {
+        $this->inputDTOClass = $inputDTOClass;
         return $this;
     }
 }

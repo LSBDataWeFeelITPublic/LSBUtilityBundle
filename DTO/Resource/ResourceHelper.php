@@ -2,6 +2,7 @@
 
 namespace LSB\UtilityBundle\DTO\Resource;
 
+use App\DTO\DTO\Output\Utility\BaseSlidingPaginationOutputDTO;
 use LSB\UtilityBundle\Attribute\Resource;
 use LSB\UtilityBundle\Manager\ManagerInterface;
 use LSB\UtilityBundle\Service\ManagerContainerInterface;
@@ -73,7 +74,7 @@ class ResourceHelper
 //        }
 
         if ($manager) {
-            $this->updateResourceConfiguration($controllerResource, $manager);
+            $this->updateResourceConfigurationWithDefaults($controllerResource, $manager);
         }
 
 
@@ -82,7 +83,6 @@ class ResourceHelper
         if ($entityClass) {
             $entityResource = $this->getClassResource($entityClass);
         }
-
 
         //Atrybuty encji, mając atrybut encji, mamy dostęp do obiektów DTO
         //Do rozwazenia budowa obiketu Resource na podstawie poszczegolnych atrybutow Resource
@@ -169,41 +169,60 @@ class ResourceHelper
     public function mergeResource(Resource $LSresource, Resource $MSresource): Resource
     {
         return new Resource(
-            $MSresource->getObjectClass() ?? $LSresource->getObjectClass(),
-            $MSresource->getManagerClass() ?? $LSresource->getManagerClass(),
-            $MSresource->getInputCreateDTOClass() ?? $LSresource->getInputCreateDTOClass(),
-            $MSresource->getInputUpdateDTOClass() ?? $LSresource->getInputUpdateDTOClass(),
-            $MSresource->getOutputDTOClass() ?? $LSresource->getOutputDTOClass(),
-            $MSresource->getDeserializationType() ?? $LSresource->getDeserializationType(),
-            $MSresource->getCollectionItemDeserializationType() ?? $LSresource->getCollectionItemDeserializationType(),
-            $MSresource->getIsDisabled() ?? $LSresource->getIsDisabled(),
-            $MSresource->getIsCollection() ?? $LSresource->getIsCollection(),
-            $MSresource->getCollectionOutputDTOClass() ?? $LSresource->getCollectionOutputDTOClass(),
-            $MSresource->getCollectionItemOutputDTOClass() ?? $LSresource->getCollectionItemOutputDTOClass(),
-            $MSresource->getIsActionDisabled() ?? $LSresource->getIsActionDisabled(),
-            $MSresource->getIsSecurityCheckDisabled() ?? $LSresource->getIsSecurityCheckDisabled(),
-            $MSresource->getIsCRUD() ?? $LSresource->getIsCRUD(),
-            $MSresource->getVoterAction() ?? $LSresource->getVoterAction()
+            objectClass: $MSresource->getObjectClass() ?? $LSresource->getObjectClass(),
+            managerClass: $MSresource->getManagerClass() ?? $LSresource->getManagerClass(),
+            inputDTOClass: $MSresource->getInputDTOClass() ?? $LSresource->getInputDTOClass(),
+            inputCreateDTOClass: $MSresource->getInputCreateDTOClass() ?? $LSresource->getInputCreateDTOClass(),
+            inputUpdateDTOClass: $MSresource->getInputUpdateDTOClass() ?? $LSresource->getInputUpdateDTOClass(),
+            outputDTOClass: $MSresource->getOutputDTOClass() ?? $LSresource->getOutputDTOClass(),
+            serializationType: $MSresource->getSerializationType() ?? $LSresource->getSerializationType(),
+            collectionItemSerializationType: $MSresource->getCollectionItemSerializationType() ?? $LSresource->getCollectionItemSerializationType(),
+            isDisabled: $MSresource->getIsDisabled() ?? $LSresource->getIsDisabled(),
+            isCollection: $MSresource->getIsCollection() ?? $LSresource->getIsCollection(),
+            collectionOutputDTOClass: $MSresource->getCollectionOutputDTOClass() ?? $LSresource->getCollectionOutputDTOClass(),
+            collectionItemOutputDTOClass: $MSresource->getCollectionItemOutputDTOClass() ?? $LSresource->getCollectionItemOutputDTOClass(),
+            isActionDisabled: $MSresource->getIsActionDisabled() ?? $LSresource->getIsActionDisabled(),
+            isSecurityCheckDisabled: $MSresource->getIsSecurityCheckDisabled() ?? $LSresource->getIsSecurityCheckDisabled(),
+            isCRUD: $MSresource->getIsCRUD() ?? $LSresource->getIsCRUD(),
+            voterAction: $MSresource->getVoterAction() ?? $LSresource->getVoterAction()
         );
     }
 
     /**
+     * Updates Resource object with defaults.
+     *
      * @param Resource $resource
      * @param \LSB\UtilityBundle\Manager\ManagerInterface|null $manager
      * @return Resource
      */
-    public function updateResourceConfiguration(Resource $resource, ?ManagerInterface $manager = null): Resource
+    public function updateResourceConfigurationWithDefaults(Resource $resource, ?ManagerInterface $manager = null): Resource
     {
         if (!$resource->getObjectClass() && $manager) {
             $resource->setObjectClass($manager->getResourceEntityClass());
         }
 
+        if (!$resource->getInputCreateDTOClass(false)) {
+            $resource->setInputCreateDTOClass($resource->getInputDTOClass());
+        }
+
         if (!$resource->getInputUpdateDTOClass(false)) {
-            $resource->setInputUpdateDTOClass($resource->getInputCreateDTOClass());
+            $resource->setInputUpdateDTOClass($resource->getInputDTOClass());
         }
 
         if (!$resource->getCollectionItemOutputDTOClass()) {
             $resource->setCollectionItemOutputDTOClass($resource->getOutputDTOClass());
+        }
+
+        if (!$resource->getCollectionOutputDTOClass()) {
+            $resource->setCollectionOutputDTOClass(BaseSlidingPaginationOutputDTO::class);
+        }
+
+        if (!$resource->getSerializationType()) {
+            $resource->setSerializationType(Resource::TYPE_AUTO);
+        }
+
+        if (!$resource->getCollectionItemSerializationType()) {
+            $resource->setCollectionItemSerializationType(Resource::TYPE_AUTO);
         }
 
         return $resource;

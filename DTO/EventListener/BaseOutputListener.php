@@ -20,6 +20,8 @@ use JMS\Serializer\SerializationContext;
 
 abstract class BaseOutputListener extends BaseListener
 {
+    const CONTENT_TYPE_DEFAULT = 'json';
+
     public function __construct(
         protected ManagerContainerInterface $managerContainer,
         protected ValidatorInterface        $validator,
@@ -47,11 +49,12 @@ abstract class BaseOutputListener extends BaseListener
 
         $apiVersionNumeric = $this->apiVersionGrabber->getVersion($event->getRequest(), true);
 
-        $requestData = RequestAttributes::getOrderCreateRequestData($event->getRequest());
+        $requestData = RequestAttributes::getOrCreateRequestData($event->getRequest());
 
         if (!$requestData->getResource() || $requestData->getResource()->getIsDisabled() === true) {
             return;
         }
+
         if (!$requestData->getResource()->getIsActionDisabled()) {
             if ($requestData->getResource()->getIsCRUD()) {
                 switch ($event->getRequest()->getMethod()) {
@@ -202,7 +205,7 @@ abstract class BaseOutputListener extends BaseListener
 
         if ($result !== null) {
             $response
-                ->setContent($this->serializer->serialize($result, $event->getRequest()->getContentType(), $context));
+                ->setContent($this->serializer->serialize($result, $event->getRequest()->getContentType() ?? self::CONTENT_TYPE_DEFAULT, $context));
         }
 
         $event->setResponse($response);

@@ -43,7 +43,7 @@ class APIRequestResolver implements ArgumentValueResolverInterface
 
         yield new APIRequest(
             $request,
-            RequestAttributes::getOrderCreateRequestData($request)
+            RequestAttributes::getOrCreateRequestData($request)
         );
     }
 }

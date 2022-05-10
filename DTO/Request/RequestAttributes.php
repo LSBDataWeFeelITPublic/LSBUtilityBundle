@@ -55,7 +55,7 @@ class RequestAttributes
      * @param Request $request
      * @return RequestData
      */
-    public static function getOrderCreateRequestData(Request $request): RequestData
+    public static function getOrCreateRequestData(Request $request): RequestData
     {
         $requestData = null;
 

@@ -93,7 +93,7 @@ class DTOService
         }
 
 
-        if ($resource->getDeserializationType() === Resource::TYPE_DATA_TRANSFORMER) {
+        if ($resource->getSerializationType() === Resource::TYPE_DATA_TRANSFORMER) {
             $objectClass = $manager ? $manager->getResourceEntityClass() : $resource->getObjectClass();
             if (!$objectClass) {
                 throw new \Exception('Object class is missing.');
@@ -149,7 +149,7 @@ class DTOService
         }
 
 
-        if ($resource->getDeserializationType() === Resource::TYPE_DATA_TRANSFORMER) {
+        if ($resource->getSerializationType() === Resource::TYPE_DATA_TRANSFORMER) {
             $dataTransformer = $this->dataTransformerService->getDataInitializerTransformer($inputDTO, $manager->getResourceEntityClass(), []);
         } else {
             $dataTransformer = null;
@@ -174,19 +174,21 @@ class DTOService
 
     /**
      * @param \LSB\UtilityBundle\Attribute\Resource $resource
-     * @param \LSB\UtilityBundle\DTO\Model\Output\OutputDTOInterface|null $outputDTO
      * @param object $object
+     * @param \LSB\UtilityBundle\DTO\Model\Output\OutputDTOInterface|null $outputDTO
      * @param null $deserializationType
      * @param int $level
+     * @param bool $isCollectionItem
      * @return \LSB\UtilityBundle\DTO\Model\Output\OutputDTOInterface|null
-     * @throws \Exception
+     * @throws \ReflectionException
      */
     public function generateOutputDTO(
         Resource            $resource,
         object              $object,
         ?OutputDTOInterface $outputDTO = null,
                             $deserializationType = null,
-        int                 $level = 0
+        int                 $level = 0,
+        bool                $isCollectionItem = false
     ): ?OutputDTOInterface {
         //TODO add max level to resource configuration
         if ($level >= self::NESTING_LEVEL_MAX || $level === self::NESTING_LEVEL_BLOCKED) {
@@ -201,7 +203,11 @@ class DTOService
             if (!$outputDTO) {
                 $outputDTO = new ($resource->getCollectionOutputDTOClass())();
             }
-        } elseif (!$outputDTO) {
+        } elseif ($isCollectionItem) {
+            $outputDTO = new ($resource->getCollectionItemOutputDTOClass())();
+        }
+
+        if (!$outputDTO) {
             $outputDTO = new ($resource->getOutputDTOClass())();
         }
 
@@ -210,7 +216,7 @@ class DTOService
         }
 
         if (!$deserializationType) {
-            $deserializationType = $resource->getDeserializationType();
+            $deserializationType = $resource->getSerializationType();
         }
 
         if ($processAsCollection) {
@@ -224,12 +230,22 @@ class DTOService
                     $items = [];
 
                     foreach ($object->getItems() as $item) {
+
+                        $itemOutputDTOClass = $resource->getCollectionItemOutputDTOClass();
+
+                        $itemOutputDTO = (new $itemOutputDTOClass);
+
+                        if (!$itemOutputDTO instanceof OutputDTOInterface) {
+                            throw new \Exception('Output DTO class must implement OutputDTOInterface');
+                        }
+
                         $items[] = $this->generateOutputDTO(
                             $resource,
                             $item,
-                            $resource->getCollectionItemOutputDTOClass(),
-                            $resource->getCollectionItemDeserializationType(),
-                            $level + 1
+                            $itemOutputDTO,
+                            $resource->getCollectionItemSerializationType(),
+                            $level + 1,
+                            true
                         );
                     }
 
@@ -247,14 +263,14 @@ class DTOService
                         get_class($outputDTO),
                         $this->dataTransformerService->buildDataTransformerContext(null, $outputDTO, null, null)
                     );
+                } else {
+                    throw new \Exception('Missing data transformer.');
                 }
             } else {
                 $this->populateDtoWithEntity($object, $outputDTO);
             }
         } else {
-
             if ($deserializationType === Resource::TYPE_DATA_TRANSFORMER) {
-
                 $dataTransformer = $this->dataTransformerService->getDataTransformer($object, get_class($outputDTO), []);
                 if ($dataTransformer) {
                     $outputDTO = $dataTransformer->transform(
@@ -262,11 +278,14 @@ class DTOService
                         get_class($outputDTO),
                         $this->dataTransformerService->buildDataTransformerContext(null, $outputDTO, null, null)
                     );
+                } else {
+                    throw new \Exception('Missing data transformer.');
                 }
             } else {
-                $this->populateDtoWithEntity($object, $outputDTO);
+                $this->populateDtoWithEntity($object, $outputDTO, $resource);
             }
         }
+
         return $outputDTO;
     }
 
@@ -283,7 +302,7 @@ class DTOService
 
         if ($resource->getIsCollection()) {
             //In case of data collection data transformation is required
-            if ($resource->getDeserializationType() !== Resource::TYPE_DATA_TRANSFORMER) {
+            if ($resource->getSerializationType() !== Resource::TYPE_DATA_TRANSFORMER) {
                 throw new \Exception('Data transformed is required for collection');
             }
 
@@ -302,7 +321,7 @@ class DTOService
             }
 
         } else {
-            if ($resource->getDeserializationType() === Resource::TYPE_DATA_TRANSFORMER) {
+            if ($resource->getSerializationType() === Resource::TYPE_DATA_TRANSFORMER) {
                 $dataTransformer = $this->dataTransformerService->getDataTransformer($object, get_class($outputDTO), []);
                 if ($dataTransformer) {
                     $outputDTO = $dataTransformer->transform(
@@ -378,7 +397,7 @@ class DTOService
         }
 
         if ($populate) {
-            switch ($resource->getDeserializationType()) {
+            switch ($resource->getSerializationType()) {
                 case Resource::TYPE_AUTO:
 
                     $this->populateDtoWithEntity($object, $inputDTO);
@@ -557,10 +576,11 @@ class DTOService
 
     /**
      * @param string $class
-     * @param bool $updateConfiguration
+     * @param bool $updateWithDefaults
      * @return \LSB\UtilityBundle\Attribute\Resource|null
+     * @deprecated
      */
-    public function getResourceByEntity(string $class, bool $updateConfiguration = false): ?Resource
+    public function getResourceByEntity(string $class, bool $updateWithDefaults = false): ?Resource
     {
         try {
             $reflectionClass = new ReflectionClass($class);
@@ -585,16 +605,22 @@ class DTOService
 //            $manager = $this->managerContainer->getByManagerClass($entityResource->getManagerClass());
 //        }
 
-        if ($entityResource && $updateConfiguration) {
-            $this->resourceHelper->updateResourceConfiguration($entityResource);
+        if ($entityResource && $updateWithDefaults) {
+            $this->resourceHelper->updateResourceConfigurationWithDefaults($entityResource);
         }
 
         return $entityResource;
     }
 
-    public function getResourceByProperty(ReflectionProperty $reflectionProperty, bool $updateConfiguration = false, ?Resource $LSResource = null): ?Resource
+    /**
+     * @param \ReflectionProperty $reflectionProperty
+     * @param bool $updateWithDefaults
+     * @param \LSB\UtilityBundle\Attribute\Resource|null $LSResource
+     * @return \LSB\UtilityBundle\Attribute\Resource|null
+     *
+     */
+    public function getResourceByProperty(ReflectionProperty $reflectionProperty, bool $updateWithDefaults = false, ?Resource $LSResource = null): ?Resource
     {
-
         $propertyAttributes = $reflectionProperty->getAttributes(Resource::class);
         $resource = null;
 
@@ -609,9 +635,10 @@ class DTOService
         }
 
         if (!$resource && $reflectionProperty->getType()) {
-            $resource = new Resource(outputDTOClass: $reflectionProperty->getType()->getName());
+            $resource = new Resource(
+                outputDTOClass: $reflectionProperty->getType()->getName()
+            );
         }
-
 
         if ($resource && $LSResource) {
             $resource = $this->resourceHelper->mergeResource($LSResource, $resource);
@@ -619,8 +646,8 @@ class DTOService
             $resource = $LSResource;
         }
 
-        if ($resource && $updateConfiguration) {
-            $this->resourceHelper->updateResourceConfiguration($resource);
+        if ($resource && $updateWithDefaults) {
+            $this->resourceHelper->updateResourceConfigurationWithDefaults($resource);
         }
 
         return $resource;
@@ -628,21 +655,69 @@ class DTOService
 
     /**
      * @param string $class
-     * @param \ReflectionProperty $reflectionProperty
+     * @param \ReflectionProperty|null $reflectionProperty
      * @param bool $updateConfiguration
      * @return \LSB\UtilityBundle\Attribute\Resource|null
-     * @throws \ReflectionException
+     * @throws \Exception
      */
-    public function getItemResource(string $class, ReflectionProperty $reflectionProperty, bool $updateConfiguration = false): ?Resource
+    public function getItemResource(string $class, ?ReflectionProperty $reflectionProperty = null, bool $updateConfiguration = false): ?Resource
     {
-        $itemResource = $this->getResourceByEntity($class, true);
-        $itemResource = $this->getResourceByProperty($reflectionProperty, true, $itemResource);
+        $itemResource = null;
 
-        if (!$itemResource instanceof Resource) {
-            throw new \Exception('Missing Resource attribute for class ' . $class);
+        if ($reflectionProperty) {
+            $itemResource = $this->getResourceByProperty($reflectionProperty, true, $itemResource);
         }
 
+
         return $itemResource;
+    }
+
+    public function getCollectionItemResource(
+        ?Resource           $masterResource = null,
+        ?ReflectionProperty $reflectionProperty = null,
+        bool                $updateConfiguration = false
+    ): ?Resource {
+        $propertyAttributes = $reflectionProperty->getAttributes(Resource::class);
+        $resource = null;
+
+        /**
+         * @var Resource|null $resource
+         */
+        foreach ($propertyAttributes as $entityAttribute) {
+            if ($entityAttribute->getName() !== Resource::class) {
+                continue;
+            }
+            $resource = $entityAttribute->newInstance();
+        }
+
+        if (!$resource && $masterResource) {
+            $resource = new Resource(
+                outputDTOClass: $masterResource->getCollectionItemOutputDTOClass(),
+                serializationType: $masterResource->getCollectionItemSerializationType()
+            );
+        } elseif($resource) {
+            $resource
+                ->setOutputDTOClass($resource->getCollectionItemOutputDTOClass())
+                ->setSerializationType($resource->getCollectionItemSerializationType())
+            ;
+        }
+
+
+        if ($resource && $masterResource) {
+            $resource = $this->resourceHelper->mergeResource($masterResource, $resource);
+        } elseif (!$resource && $masterResource) {
+            $resource = $masterResource;
+        }
+
+        if ($resource && $updateConfiguration) {
+            $this->resourceHelper->updateResourceConfigurationWithDefaults($resource);
+        }
+
+        if (!$resource instanceof Resource) {
+            throw new \Exception(sprintf("Collection Resource is missing. Please add Resource attribute to %s. .", $reflectionProperty->getName()));
+        }
+
+        return $resource;
     }
 
     public static array $excludedProps = ['errors'];
@@ -830,11 +905,13 @@ class DTOService
                 $valueDTO = [];
 
                 foreach ($value as $item) {
-                    $itemResource = $this->getItemResource($this->getRealClass($item), $reflectionPropertyDTO, true);
+                    $itemResource = $this->getCollectionItemResource($resource, $reflectionPropertyDTO, true);
+
                     $itemDTO = $this->generateOutputDTO(
                         resource: $itemResource,
                         object: $item,
-                        level: $nestingLevel
+                        level: $nestingLevel,
+                        isCollectionItem: true
                     );
                     $valueDTO[] = $itemDTO;
                 }
@@ -944,7 +1021,8 @@ class DTOService
     /**
      * @param \ReflectionProperty $reflectionProperty
      * @param \LSB\UtilityBundle\DTO\Model\DTOInterface $dto
-     * @param string $getterName
+     * @param string|null $getterName
+     * @param string|null $propertyName
      * @param \Symfony\Component\HttpFoundation\Request $request
      * @param string|null $appCode
      * @return \LSB\UtilityBundle\DTO\Model\ObjectHolder|null
@@ -964,7 +1042,6 @@ class DTOService
             return null;
         }
 
-        //Other ConverToObject should be ignored
         /** @var ConvertToObject $convertToObjectAttribute */
         $convertToObjectAttribute = $attributes[0]->newInstance();
 
@@ -995,11 +1072,11 @@ class DTOService
 
             switch ($convertToObjectAttribute->getKey()) {
                 case ConvertToObject::KEY_ID:
-                    $id = (int) $id;
+                    $id = (int)$id;
                     $object = $manager->getById($id);
                     break;
                 case ConvertToObject::KEY_UUID:
-                    $id = (string) $id;
+                    $id = (string)$id;
                     try {
                         Assert::uuid($id);
                     } catch (\Exception $e) {
