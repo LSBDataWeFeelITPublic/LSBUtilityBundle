@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace LSB\UtilityBundle\Manager;
 
 use LSB\UtilityBundle\Application\ApplicationContextInterface;
-use LSB\UtilityBundle\DTO\DataTransformer\DataTransformerInterface;
+use LSB\UtilityBundle\DataTransfer\DataTransformer\DataTransformerInterface;
 use LSB\UtilityBundle\Factory\FactoryInterface;
 use LSB\UtilityBundle\Form\BaseEntityType;
 use LSB\UtilityBundle\Repository\RepositoryInterface;
@@ -76,7 +76,7 @@ interface ManagerInterface extends ApplicationContextInterface
 
 //    /**
 //     * @param $inputDTO
-//     * @param \LSB\UtilityBundle\DTO\DataTransformer\DataTransformerInterface|null $dataTransformer
+//     * @param \LSB\UtilityBundle\DataTransfer\DataTransformer\DataTransformerInterface|null $dataTransformer
 //     * @return object
 //     */
 //    public function createNewFromDTO($inputDTO, ?DataTransformerInterface $dataTransformer = null): object;

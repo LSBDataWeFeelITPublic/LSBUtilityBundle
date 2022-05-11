@@ -38,7 +38,7 @@ services:
 
     ### DTO
 
-    LSB\UtilityBundle\DTO\DTOService:
+    LSB\UtilityBundle\DataTransfer\DTOService:
         arguments:
             - '@lsb_utility.manager.container'
             - '@lsb_utility.dto.data_transformer.service'
@@ -48,40 +48,40 @@ services:
             - '@request_stack'
 
     lsb_utility.dto.service:
-        alias: 'LSB\UtilityBundle\DTO\DTOService'
+        alias: 'LSB\UtilityBundle\DataTransfer\DTOService'
 
-    LSB\UtilityBundle\DTO\Resource\ResourceHelper:
+    LSB\UtilityBundle\DataTransfer\Resource\ResourceHelper:
         arguments:
             - '@lsb_utility.manager.container'
 
     lsb_utility.dto.resource.helper:
-        alias: 'LSB\UtilityBundle\DTO\Resource\ResourceHelper'
+        alias: 'LSB\UtilityBundle\DataTransfer\Resource\ResourceHelper'
 
 
-    LSB\UtilityBundle\DTO\Resolver\APIRequestResolver:
+    LSB\UtilityBundle\DataTransfer\Resolver\APIRequestResolver:
         arguments:
             - '@validator'
             - '@jms_serializer'
         tags:
             - { name: controller.argument_value_resolver }
 
-    LSB\UtilityBundle\DTO\DataTransformer\DataTransformerModuleInventory: ~
+    LSB\UtilityBundle\DataTransfer\DataTransformer\DataTransformerModuleInventory: ~
 
     lsb_utility.dto.data_transformer.module.inventory:
-        alias: 'LSB\UtilityBundle\DTO\DataTransformer\DataTransformerModuleInventory'
+        alias: 'LSB\UtilityBundle\DataTransfer\DataTransformer\DataTransformerModuleInventory'
 
-    LSB\UtilityBundle\DTO\DataTransformer\DataTransformerModuleService:
+    LSB\UtilityBundle\DataTransfer\DataTransformer\DataTransformerModuleService:
         arguments:
             - '@lsb_utility.dto.data_transformer.module.inventory'
 
     lsb_utility.dto.data_transformer.module.service:
-        alias: 'LSB\UtilityBundle\DTO\DataTransformer\DataTransformerModuleService'
+        alias: 'LSB\UtilityBundle\DataTransfer\DataTransformer\DataTransformerModuleService'
 
-    LSB\UtilityBundle\DTO\DataTransformer\DataTransformerService:
+    LSB\UtilityBundle\DataTransfer\DataTransformer\DataTransformerService:
         arguments:
             - '@lsb_utility.dto.data_transformer.module.service'
 
-    lsb_utility.dto.data_transformer.service: '@LSB\UtilityBundle\DTO\DataTransformer\DataTransformerService'
+    lsb_utility.dto.data_transformer.service: '@LSB\UtilityBundle\DataTransfer\DataTransformer\DataTransformerService'
 
 
     LSB\UtilityBundle\Service\ApiVersionGrabber:

@@ -7,26 +7,20 @@ use Doctrine\ORM\Mapping as ORM;
 use Gedmo\Mapping\Annotation as Gedmo;
 use Symfony\Component\Validator\Constraints as Assert;
 
-/**
- * Trait CreatedUpdatedTrait
- * @package LSB\UtilityBundle\Traits
- */
 trait CreatedUpdatedTrait
 {
 
     /**
-     * @var \DateTime|null
      * @ORM\Column(type="datetime", nullable=true, options={"default"="CURRENT_TIMESTAMP"})
      * @Gedmo\Timestampable(on="create")
      */
-    protected $createdAt;
+    protected ?\DateTime $createdAt = null;
 
     /**
-     * @var \DateTime|null
      * @ORM\Column(type="datetime", nullable=true, options={"default"="CURRENT_TIMESTAMP"})
      * @Gedmo\Timestampable(on="update")
      */
-    protected $updatedAt;
+    protected ?\DateTime $updatedAt = null;
 
     /**
      * @return \DateTime|null
@@ -38,10 +32,12 @@ trait CreatedUpdatedTrait
 
     /**
      * @param \DateTime|null $createdAt
+     * @return CreatedUpdatedTrait
      */
-    public function setCreatedAt(?\DateTime $createdAt): void
+    public function setCreatedAt(?\DateTime $createdAt): self
     {
         $this->createdAt = $createdAt;
+        return $this;
     }
 
     /**
@@ -54,11 +50,11 @@ trait CreatedUpdatedTrait
 
     /**
      * @param \DateTime|null $updatedAt
+     * @return CreatedUpdatedTrait
      */
-    public function setUpdatedAt(?\DateTime $updatedAt): void
+    public function setUpdatedAt(?\DateTime $updatedAt): self
     {
         $this->updatedAt = $updatedAt;
+        return $this;
     }
-
-
 }
