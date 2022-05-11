@@ -115,6 +115,7 @@ class DTOService
         }
 
         if ($manager) {
+            $manager->doPersist($object);
             $manager->update($object);
         }
 
