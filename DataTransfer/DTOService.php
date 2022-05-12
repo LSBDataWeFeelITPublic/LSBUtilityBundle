@@ -268,7 +268,7 @@ class DTOService
                     throw new \Exception('Missing data transformer.');
                 }
             } else {
-                $this->populateDtoWithEntity($object, $outputDTO);
+                $this->populateDtoWithEntity($object, $outputDTO, $resource);
             }
         } else {
             if ($deserializationType === Resource::TYPE_DATA_TRANSFORMER) {
@@ -892,9 +892,9 @@ class DTOService
                 continue;
             }
 
-            if (!is_object($value) && !is_iterable($value)) {
+            if (!is_object($value) && !is_iterable($value) || is_object($value) && $this->isStandardObject($value)) {
                 $valueDTO = $value;
-            } elseif (is_object($value)) {
+            } elseif (is_object($value) && !is_iterable($value)) {
                 $itemResource = $this->getItemResource($this->getRealClass($value), $reflectionPropertyDTO, true);
 
                 $valueDTO = $this->generateOutputDTO(
@@ -930,6 +930,18 @@ class DTOService
                 continue;
             }
         }
+    }
+
+    protected function isStandardObject(object $object): bool
+    {
+        switch(true) {
+            case $object instanceof \DateTime:
+            case $object instanceof \StdClass:
+                return true;
+
+        }
+
+        return false;
     }
 
     /**
