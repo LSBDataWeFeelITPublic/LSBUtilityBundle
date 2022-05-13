@@ -18,6 +18,6 @@ class XRelation implements \JsonSerializable
     #[ReturnTypeWillChange]
     public function jsonSerialize()
     {
-        return $this->relation->jsonSerialize();
+        return $this->relation;
     }
 }

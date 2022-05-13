@@ -13,7 +13,7 @@ use OpenApi\Generator;
 class XProperty extends \OpenApi\Attributes\Property
 {
     public function __construct(
-        XBuilder                       $XBuilder,
+        XBuilder                       $builder,
         ?string                        $property = null,
         object|string|null             $ref = null,
         ?string                        $schema = null,
@@ -52,7 +52,7 @@ class XProperty extends \OpenApi\Attributes\Property
         ?array                         $x = null,
         ?array                         $attachables = null
     ) {
-        $x = $XBuilder->toArray();
+        $x = $builder->toArray();
 
         parent::__construct(
             $property,
