@@ -27,6 +27,7 @@ class Resource
      * @param bool|null $isDisabled Totally blocks input/output listeners
      * @param bool|null $isCollection Designation of data type - collection
      * @param string|null $collectionOutputDTOClass The DTO's output class of the collection
+     * @param string|null $collectionItemInputDTOClass The DTO input class of the collection item/array.
      * @param string|null $collectionItemOutputDTOClass The DTO output class of the collection item
      * @param bool|null $isActionDisabled Blocking the action of working with an object (creating, updating)
      * @param bool|null $isSecurityCheckDisabled Disables permission verification (isGranted forced to true)
@@ -45,11 +46,13 @@ class Resource
         protected ?bool   $isDisabled = null,
         protected ?bool   $isCollection = null,
         protected ?string $collectionOutputDTOClass = null,
+        protected ?string $collectionItemInputDTOClass = null,
         protected ?string $collectionItemOutputDTOClass = null,
         protected ?bool   $isActionDisabled = null,
         protected ?bool   $isSecurityCheckDisabled = null,
         protected ?bool   $isCRUD = null,
-        protected ?string $voterAction = null
+        protected ?string $voterAction = null,
+        protected ?bool $isTranslation = null
     ) {
     }
 
@@ -350,4 +353,42 @@ class Resource
         $this->inputDTOClass = $inputDTOClass;
         return $this;
     }
+
+    /**
+     * @return string|null
+     */
+    public function getCollectionItemInputDTOClass(): ?string
+    {
+        return $this->collectionItemInputDTOClass;
+    }
+
+    /**
+     * @param string|null $collectionItemInputDTOClass
+     * @return Resource
+     */
+    public function setCollectionItemInputDTOClass(?string $collectionItemInputDTOClass): Resource
+    {
+        $this->collectionItemInputDTOClass = $collectionItemInputDTOClass;
+        return $this;
+    }
+
+    /**
+     * @return bool|null
+     */
+    public function getIsTranslation(): ?bool
+    {
+        return $this->isTranslation;
+    }
+
+    /**
+     * @param bool|null $isTranslation
+     * @return Resource
+     */
+    public function setIsTranslation(?bool $isTranslation): Resource
+    {
+        $this->isTranslation = $isTranslation;
+        return $this;
+    }
+
+
 }

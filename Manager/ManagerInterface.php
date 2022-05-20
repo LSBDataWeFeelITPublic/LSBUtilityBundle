@@ -109,6 +109,11 @@ interface ManagerInterface extends ApplicationContextInterface
     public function getResourceEntityClass(): string;
 
     /**
+     * @return string|null
+     */
+    public function getResourceTranslationClass(): ?string;
+
+    /**
      * @return string
      */
     public function getResourceVoterSubjectClass(): string;

@@ -23,13 +23,16 @@ class ConvertToObject
      * @param string|null $voterAction Voter action
      * @param bool $throwNotFoundException
      * @param string|null $objectClass Entity FQCN
+     * @param bool $isTranslation
      */
     public function __construct(
         protected int     $key = self::KEY_UUID,
         protected ?string $managerClass = null,
         protected ?string $voterAction = null,
         protected bool    $throwNotFoundException = false,
-        protected ?string $objectClass = null
+        protected ?string $objectClass = null,
+        protected bool    $isTranslation = false,
+        protected bool    $useObjectId = false
     ) {
     }
 
@@ -120,6 +123,42 @@ class ConvertToObject
     public function setObjectClass(?string $objectClass): ConvertToObject
     {
         $this->objectClass = $objectClass;
+        return $this;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isTranslation(): bool
+    {
+        return $this->isTranslation;
+    }
+
+    /**
+     * @param bool $isTranslation
+     * @return ConvertToObject
+     */
+    public function setIsTranslation(bool $isTranslation): ConvertToObject
+    {
+        $this->isTranslation = $isTranslation;
+        return $this;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isUseObjectId(): bool
+    {
+        return $this->useObjectId;
+    }
+
+    /**
+     * @param bool $useObjectId
+     * @return ConvertToObject
+     */
+    public function setUseObjectId(bool $useObjectId): ConvertToObject
+    {
+        $this->useObjectId = $useObjectId;
         return $this;
     }
 }

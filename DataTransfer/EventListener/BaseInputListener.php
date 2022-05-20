@@ -20,6 +20,13 @@ use LSB\UtilityBundle\Service\ManagerContainerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
+use Symfony\Component\Serializer\Encoder\JsonEncoder;
+use Symfony\Component\Serializer\Encoder\XmlEncoder;
+use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
+use Symfony\Component\Serializer\Normalizer\ArrayDenormalizer;
+use Symfony\Component\Serializer\Normalizer\GetSetMethodNormalizer;
+use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
+use Symfony\Component\Serializer\Serializer;
 use Symfony\Component\Validator\ConstraintViolation;
 use Symfony\Component\Validator\ConstraintViolationList;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
@@ -93,6 +100,7 @@ abstract class BaseInputListener extends BaseListener
                     $inputDTO = $this->prepareInputDTO($request, $resource);
                     $requestData->setInputDTO($inputDTO);
 
+
                     if (!$resource->getIsSecurityCheckDisabled()) {
                         if ($inputDTO->getObject() && $this->DTOService->isGranted($resource, $request, $resource->getVoterAction() ?? ($request->getMethod() === Request::METHOD_PUT ? BaseObjectVoter::ACTION_PUT : BaseObjectVoter::ACTION_PATCH), $inputDTO->getObject())) {
                             $requestData->setIsGranted(true);
@@ -118,7 +126,10 @@ abstract class BaseInputListener extends BaseListener
                     }
 
                     if (!$requestData->getObject()) {
-                        $object = $this->prepareObject($resource, $request);
+                        $object = $this->prepareObjectByRequestId(
+                            resource: $resource,
+                            request: $request
+                        );
                         $requestData->setObject($object);
                     }
 
@@ -159,7 +170,11 @@ abstract class BaseInputListener extends BaseListener
                     } else {
                         // Single object
                         if (!$requestData->getObject()) {
-                            $object = $this->prepareObject($resource, $request);
+                            $object = $this->prepareObjectByRequestId(
+                                resource: $resource,
+                                request: $request
+                            );
+
                             $requestData->setObject($object);
                         }
                         if (!$resource->getIsSecurityCheckDisabled()) {
@@ -230,7 +245,7 @@ abstract class BaseInputListener extends BaseListener
      * @return object|null
      * @throws \ReflectionException
      */
-    protected function prepareObject(Resource $resource, Request $request): ?object
+    protected function prepareObjectByRequestId(Resource $resource, Request $request): ?object
     {
         return $this->DTOService->getObjectByRequestId($resource, RequestAttributes::getRequestIdentifier($request));
     }
@@ -276,13 +291,15 @@ abstract class BaseInputListener extends BaseListener
                     break;
                 }
 
-                $dto = $this->DTOService->prepareInputDTO(
+                $dto = $this->DTOService->generateInputDTO(
                     $resource,
                     $requestIdentifier,
                     $dto,
                     $request->getMethod() === Request::METHOD_PATCH,
                     $request->getMethod() === Request::METHOD_PUT
                 );
+
+                //Dodane w celach testowych
                 $context->setAttribute(ExistingObjectConstructor::ATTRIBUTE_TARGET, $dto);
                 break;
         }
@@ -290,6 +307,7 @@ abstract class BaseInputListener extends BaseListener
         if (!$resource->getInputCreateDTOClass()) {
             throw new \Exception('Input Create DTO Class is missing.');
         }
+        //Na tym etapie obiekt DTO nie posiada zagnieżdzonych input dto dla tłumaczeń
 
         try {
             $dto = $this->serializer->deserialize(
@@ -320,6 +338,9 @@ abstract class BaseInputListener extends BaseListener
 
             $dto->addError(InputDTOInterface::ERROR_DESERIALIZATION, $e->getMessage());
         }
+
+        //TODO usunac
+        //Zafixowane zasilanie kolekcji - utworzeone obiekty są poprawne, ale nie posiadają relacji do obiektu zagniezdzonego
 
         return $dto;
     }

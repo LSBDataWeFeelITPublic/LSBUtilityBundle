@@ -180,6 +180,7 @@ class ResourceHelper
             isDisabled: $MSresource->getIsDisabled() ?? $LSresource->getIsDisabled(),
             isCollection: $MSresource->getIsCollection() ?? $LSresource->getIsCollection(),
             collectionOutputDTOClass: $MSresource->getCollectionOutputDTOClass() ?? $LSresource->getCollectionOutputDTOClass(),
+            collectionItemInputDTOClass: $MSresource->getCollectionItemInputDTOClass() ?? $LSresource->getCollectionItemInputDTOClass(),
             collectionItemOutputDTOClass: $MSresource->getCollectionItemOutputDTOClass() ?? $LSresource->getCollectionItemOutputDTOClass(),
             isActionDisabled: $MSresource->getIsActionDisabled() ?? $LSresource->getIsActionDisabled(),
             isSecurityCheckDisabled: $MSresource->getIsSecurityCheckDisabled() ?? $LSresource->getIsSecurityCheckDisabled(),

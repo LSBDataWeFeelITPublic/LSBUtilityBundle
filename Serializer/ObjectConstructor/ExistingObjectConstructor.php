@@ -13,7 +13,11 @@ class ExistingObjectConstructor implements ObjectConstructorInterface
 {
     public const ATTRIBUTE_TARGET = 'deserialization-constructor-target';
 
+    public const ATTRIBUTE_TARGET_USED = 'deserialization-constructor-target-used';
+
     private ObjectConstructorInterface $fallbackConstructor;
+
+    private bool $isUsedExistingObject = false;
 
     /**
      * @param ObjectConstructorInterface $fallbackConstructor
@@ -33,8 +37,10 @@ class ExistingObjectConstructor implements ObjectConstructorInterface
      */
     public function construct(DeserializationVisitorInterface $visitor, ClassMetadata $metadata, $data, array $type, DeserializationContext $context): ?object
     {
-        if ($context->hasAttribute(self::ATTRIBUTE_TARGET)) {
-            return $context->getAttribute(self::ATTRIBUTE_TARGET);
+        if ($context->hasAttribute(self::ATTRIBUTE_TARGET) && !$this->isUsedExistingObject) {
+            $baseObject = $context->getAttribute(self::ATTRIBUTE_TARGET);
+            $this->isUsedExistingObject = true;
+            return $baseObject;
         }
 
         return $this->fallbackConstructor->construct($visitor, $metadata, $data, $type, $context);

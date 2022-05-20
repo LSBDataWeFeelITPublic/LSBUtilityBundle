@@ -17,7 +17,7 @@ abstract class BaseFactory implements FactoryInterface
     /**
      * @var string FQCN
      */
-    protected $className;
+    protected string $className;
 
     /**
      * @inheritDoc

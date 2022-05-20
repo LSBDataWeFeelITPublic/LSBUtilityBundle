@@ -4,11 +4,13 @@ namespace LSB\UtilityBundle\DataTransfer\Model;
 
 class ObjectHolder
 {
+    /**
+     * @param int|string|null $id id, uuid or other identifier
+     * @param object|array $object entity,input dto, output dto or other object
+     */
     public function __construct(
-        //id, uuid or other identifier
         protected int|string|null $id,
-        //entity,input dto, output dto or other object
-        protected object          $object
+        protected object|array    $object
     ) {
     }
 
@@ -33,7 +35,7 @@ class ObjectHolder
     /**
      * @return object
      */
-    public function getObject(): object
+    public function getObject(): object|array
     {
         return $this->object;
     }
@@ -42,7 +44,7 @@ class ObjectHolder
      * @param object $object
      * @return ObjectHolder
      */
-    public function setObject(object $object): ObjectHolder
+    public function setObject(object|array $object): ObjectHolder
     {
         $this->object = $object;
         return $this;

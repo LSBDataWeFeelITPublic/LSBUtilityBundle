@@ -186,13 +186,23 @@ abstract class BaseManager implements ManagerInterface
     }
 
     /**
+     * @return object|null
+     * TODO use factory ?
+     */
+    public function createNewTranslation(): ?object
+    {
+        $translationClass = $this->getResourceTranslationClass();
+        return $translationClass ? new $translationClass() : null;
+    }
+
+    /**
      * @inheritDoc
      */
     public function doPersist(object $object, bool $throwException = true): bool
     {
         try {
             $this->persist($object);
-            $this->flush();
+            //$this->flush();
             return true;
         } catch (\Exception $e) {
             if ($throwException) {
@@ -277,6 +287,18 @@ abstract class BaseManager implements ManagerInterface
         }
 
         throw new \Exception('Resource: Entity FQCN is not set.');
+    }
+
+    /**
+     * @return string|null
+     */
+    public function getResourceTranslationClass(): ?string
+    {
+        if (isset($this->resourceConfiguration[BE::CONFIG_KEY_TRANSLATION][BE::CONFIG_KEY_ENTITY])) {
+            return (string)$this->resourceConfiguration[BE::CONFIG_KEY_TRANSLATION][BE::CONFIG_KEY_ENTITY];
+        }
+
+        return null;
     }
 
     /**
