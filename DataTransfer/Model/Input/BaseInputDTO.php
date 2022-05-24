@@ -2,6 +2,9 @@
 
 namespace LSB\UtilityBundle\DataTransfer\Model\Input;
 
+use LSB\UtilityBundle\DataTransfer\Builder\Field\HiddenField;
+use LSB\UtilityBundle\DataTransfer\Builder\XBuilder;
+use LSB\UtilityBundle\DataTransfer\Builder\XProperty;
 use LSB\UtilityBundle\DataTransfer\Model\BaseDTO;
 
 abstract class BaseInputDTO extends BaseDTO implements InputDTOInterface
@@ -9,6 +12,7 @@ abstract class BaseInputDTO extends BaseDTO implements InputDTOInterface
     /**
      * @var array
      */
+    #[XProperty(new XBuilder(new HiddenField()))]
     protected array $errors = [];
 
     /**

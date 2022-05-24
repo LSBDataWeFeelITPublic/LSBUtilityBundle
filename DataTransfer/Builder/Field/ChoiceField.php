@@ -2,7 +2,7 @@
 
 namespace LSB\UtilityBundle\DataTransfer\Builder\Field;
 
-class HiddenField extends BaseField
+class ChoiceField extends BaseField
 {
     const TYPE = 'choice';
 }

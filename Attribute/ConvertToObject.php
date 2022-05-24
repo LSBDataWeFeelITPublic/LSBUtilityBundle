@@ -24,6 +24,7 @@ class ConvertToObject
      * @param bool $throwNotFoundException
      * @param string|null $objectClass Entity FQCN
      * @param bool $isTranslation
+     * @param bool $useObjectId
      */
     public function __construct(
         protected int     $key = self::KEY_UUID,

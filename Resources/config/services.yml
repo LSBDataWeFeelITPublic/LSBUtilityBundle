@@ -25,6 +25,7 @@ services:
         class: 'LSB\UtilityBundle\Serializer\ObjectConstructor\ExistingObjectConstructor'
         arguments:
             - '@jms_serializer.unserialize_object_constructor'
+            - '@jms_serializer.doctrine_object_constructor'
 
     lsb_utility.jms.serializer.handler.money:
         class: 'LSB\UtilityBundle\Serializer\Handler\MoneyHandler'

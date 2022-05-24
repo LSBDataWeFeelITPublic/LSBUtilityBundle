@@ -42,7 +42,7 @@ class DTOService
     const METHOD_WORKFLOW_INPUT = 10;
     const METHOD_WORKFLOW_OUTPUT = 20;
 
-    const NESTING_LEVEL_MAX = 3;
+    const NESTING_LEVEL_MAX = 1;
     const NESTING_LEVEL_BLOCKED = -100;
     const NESTING_LEVEL_ALLOWED = 0;
 
@@ -430,7 +430,6 @@ class DTOService
         if (!$createNewObject && !$object instanceof $entityClass) {
             throw new \Exception('Object does not exist.');
         } elseif ($createNewObject && !$object instanceof $entityClass) {
-
             if ($resource->getIsTranslation()) {
                 $object = $manager->createNewTranslation();
             } else {
@@ -438,7 +437,13 @@ class DTOService
             }
         }
 
+        $inputDTO->setObject($object);
 
+//        dump('JAKIS OBIEKT');
+//        dump($object);
+//        dump('dump input dto get object');
+//        dump($inputDTO);
+//        dump('koniec input');
 
         if ($populate) {
             switch ($resource->getSerializationType()) {
@@ -464,7 +469,7 @@ class DTOService
             }
         }
 
-        $inputDTO->setObject($object);
+
 
         return $inputDTO;
     }
@@ -773,6 +778,7 @@ class DTOService
      * @param bool $convertIdsIntoEntities
      * @param \Symfony\Component\HttpFoundation\Request|null $request
      * @param string|null $appCode
+     * @param bool $allowNestedObject
      * @throws \Exception
      */
     public function populateEntityWithDTO(
@@ -792,8 +798,6 @@ class DTOService
         $reflectionDTO = new ReflectionClass($dto);
         $reflectionProperties = $reflectionDTO->getProperties($propertiesFilter);
         $nestingLevel = $allowNestedObject ? self::NESTING_LEVEL_ALLOWED : self::NESTING_LEVEL_BLOCKED;
-
-        //TODO add suport for nesteting InputDTO
 
         /**
          * @var ReflectionProperty $reflectionProperty
@@ -847,11 +851,11 @@ class DTOService
 
             if ($convertIdsIntoEntities && $this->hasConvertToObjectAttribute($reflectionProperty)) {
                 $objectHolder = $this->convertValueToObjectHolder(
+                    request: $request,
                     reflectionProperty: $reflectionProperty,
                     dto: $dto,
                     getterName: $DTOObjectGetter,
-                    propertyName: $DTOPropertyName,
-                    request: $request
+                    propertyName: $DTOPropertyName
                 );
 
                 if ($objectHolder instanceof ObjectHolder) {
@@ -1236,6 +1240,8 @@ class DTOService
                             $id = null;
                             $object = null;
                     }
+                } elseif ($data instanceof DTOInterface && $data->getObject()) {
+                    $object = $data->getObject();
                 } else {
                     if ($convertToObjectAttribute->isTranslation()) {
                         $object = $manager->createNewTranslation();
@@ -1257,6 +1263,8 @@ class DTOService
                         appCode: $appCode,
                         allowNestedObject: false
                     );
+
+                    $data->setObject($object);
 //                    }
                 }
 

@@ -19,11 +19,14 @@ use LSB\UtilityBundle\Service\ApiVersionGrabber;
 use LSB\UtilityBundle\Service\ManagerContainerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
+use Symfony\Component\PropertyAccess\PropertyAccessor;
+use Symfony\Component\PropertyInfo\Extractor\ReflectionExtractor;
 use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
 use Symfony\Component\Serializer\Encoder\JsonEncoder;
 use Symfony\Component\Serializer\Encoder\XmlEncoder;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Component\Serializer\Normalizer\ArrayDenormalizer;
+use Symfony\Component\Serializer\Normalizer\DateTimeNormalizer;
 use Symfony\Component\Serializer\Normalizer\GetSetMethodNormalizer;
 use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
 use Symfony\Component\Serializer\Serializer;
@@ -309,6 +312,25 @@ abstract class BaseInputListener extends BaseListener
         }
         //Na tym etapie obiekt DTO nie posiada zagnieżdzonych input dto dla tłumaczeń
 
+        //Symfony serializer
+
+        $serializer = new Serializer(
+            [
+                new ArrayDenormalizer(),
+                new DateTimeNormalizer(),
+                new ObjectNormalizer(
+                    null,
+                    null,
+                    null,
+                    new ReflectionExtractor()
+                ),
+            ],
+            [
+                new JsonEncoder(),
+            ]
+        );
+
+
         try {
             $dto = $this->serializer->deserialize(
                 $request->getContent(),
@@ -316,6 +338,9 @@ abstract class BaseInputListener extends BaseListener
                 $request->getFormat($request->headers->get('Content-Type')),
                 $context
             );
+
+            //$dto = $serializer->deserialize($request->getContent(), $resource->getInputCreateDTOClass(), 'json', [AbstractNormalizer::OBJECT_TO_POPULATE => $dto]);
+
 
             /**
              * @var ConstraintViolationList $error
@@ -340,7 +365,19 @@ abstract class BaseInputListener extends BaseListener
         }
 
         //TODO usunac
-        //Zafixowane zasilanie kolekcji - utworzeone obiekty są poprawne, ale nie posiadają relacji do obiektu zagniezdzonego
+        //Zafixowane zasilanie kolekcji - utworzone obiekty są poprawne, ale nie posiadają relacji do obiektu zagniezdzonego
+
+        //Assign collections
+        $propertyAccessor = new PropertyAccessor();
+
+        if ($dto->getObject()) {
+            if ($propertyAccessor->isReadable($dto, 'translations')) {
+                foreach ($propertyAccessor->getValue($dto, 'translations') as $dtoTranslation) {
+                    $objectTranslation = $dto->getObject()->getTranslations()->get($dtoTranslation->locale);
+                    $dtoTranslation->setObject($objectTranslation);
+                }
+            }
+        }
 
         return $dto;
     }
