@@ -7,6 +7,7 @@ use JMS\Serializer\SerializerInterface;
 use LSB\UtilityBundle\Attribute\Resource;
 use LSB\UtilityBundle\Controller\BaseCRUDApiController;
 use LSB\UtilityBundle\DataTransfer\DTOService;
+use LSB\UtilityBundle\DataTransfer\Helper\CRUD\Route\RouteGeneratorInterface;
 use LSB\UtilityBundle\DataTransfer\Model\Output\OutputDTOInterface;
 use LSB\UtilityBundle\DataTransfer\Request\RequestAttributes;
 use LSB\UtilityBundle\DataTransfer\Resource\ResourceHelper;
@@ -28,7 +29,8 @@ abstract class BaseOutputListener extends BaseListener
         protected SerializerInterface       $serializer,
         protected ResourceHelper            $resourceHelper,
         protected DTOService                $DTOService,
-        protected ApiVersionGrabber         $apiVersionGrabber
+        protected ApiVersionGrabber         $apiVersionGrabber,
+        protected RouteGeneratorInterface   $newResourceGetRouteGenerator
     ) {
     }
 
@@ -45,6 +47,7 @@ abstract class BaseOutputListener extends BaseListener
         }
 
         $result = null;
+        $newResourceUrl = null;
         $statusCode = Response::HTTP_NO_CONTENT;
 
         $apiVersionNumeric = $this->apiVersionGrabber->getVersion($event->getRequest(), true);
@@ -95,6 +98,8 @@ abstract class BaseOutputListener extends BaseListener
                             break;
                         }
 
+                        $newResourceUrl = $this->getGetRouteForCrudAction($event->getRequest());
+                        $statusCode = $requestData->isObjectCreated() ? Response::HTTP_CREATED : Response::HTTP_NO_CONTENT;
                         break;
                     case Request::METHOD_GET:
                         if ($requestData->getResource()->getIsCollection()) {
@@ -199,13 +204,16 @@ abstract class BaseOutputListener extends BaseListener
         $context->setGroups($groups);
 
         $result = $requestData->getResponseContent() ?? $result;
-        
+
         $response = (new Response)
             ->setStatusCode($requestData->getResponseStatusCode() ?? $statusCode);
 
         if ($result !== null) {
             $response
                 ->setContent($this->serializer->serialize($result, $event->getRequest()->getContentType() ?? self::CONTENT_TYPE_DEFAULT, $context));
+        }
+        if ($newResourceUrl) {
+            $response->headers->set('Location', $newResourceUrl);
         }
 
         $event->setResponse($response);
@@ -287,5 +295,14 @@ abstract class BaseOutputListener extends BaseListener
 
 
         return $outputDTO;
+    }
+
+    /**
+     * @param \Symfony\Component\HttpFoundation\Request $request
+     * @return string|null
+     */
+    protected function getGetRouteForCrudAction(Request $request): ?string
+    {
+        return $this->newResourceGetRouteGenerator->getPath($request);
     }
 }

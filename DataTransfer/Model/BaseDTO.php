@@ -6,9 +6,8 @@ use LSB\UtilityBundle\DataTransfer\Model\Input\BaseInputDTO;
 
 class BaseDTO
 {
-    /**
-     * @var array
-     */
+    protected bool $isNewObjectCreated = false;
+
     protected array $errors = [];
 
     /**
@@ -66,6 +65,24 @@ class BaseDTO
     public function setObject(?object $object): BaseDTO
     {
         $this->object = $object;
+        return $this;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isNewObjectCreated(): bool
+    {
+        return $this->isNewObjectCreated;
+    }
+
+    /**
+     * @param bool $isNewObjectCreated
+     * @return BaseDTO
+     */
+    public function setIsNewObjectCreated(bool $isNewObjectCreated): BaseDTO
+    {
+        $this->isNewObjectCreated = $isNewObjectCreated;
         return $this;
     }
 }

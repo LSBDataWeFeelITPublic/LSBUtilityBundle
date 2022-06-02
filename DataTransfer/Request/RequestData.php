@@ -18,6 +18,7 @@ class RequestData
      * @param bool $isGranted
      * @param bool $isObjectFetched
      * @param null $responseContent
+     * @param bool $isObjectCreated
      */
     public function __construct(
         protected ?DTOInterface $inputDTO = null,
@@ -29,7 +30,8 @@ class RequestData
         protected ?object       $object = null,
         protected bool          $isGranted = false,
         protected bool          $isObjectFetched = false,
-        protected               $responseContent = null
+        protected               $responseContent = null,
+        protected bool          $isObjectCreated = false,
     ) {
     }
 
@@ -215,6 +217,24 @@ class RequestData
     public function setResponseContent($responseContent)
     {
         $this->responseContent = $responseContent;
+        return $this;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isObjectCreated(): bool
+    {
+        return $this->isObjectCreated;
+    }
+
+    /**
+     * @param bool $isObjectCreated
+     * @return RequestData
+     */
+    public function setIsObjectCreated(bool $isObjectCreated): RequestData
+    {
+        $this->isObjectCreated = $isObjectCreated;
         return $this;
     }
 }

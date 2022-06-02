@@ -7,4 +7,8 @@ interface DTOInterface
     public function getObject(): ?object;
 
     public function setObject(?object $entity);
+
+    public function isNewObjectCreated(): bool;
+
+    public function setIsNewObjectCreated(bool $isNewObjectCreated);
 }

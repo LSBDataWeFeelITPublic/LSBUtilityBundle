@@ -91,6 +91,18 @@ services:
 
     lsb_utility.api.version_grabber: '@LSB\UtilityBundle\Service\ApiVersionGrabber'
 
+    ### Helpers
+
+    LSB\UtilityBundle\DataTransfer\Helper\CRUD\Route\NewResourceGetRouteGenerator:
+        arguments:
+            - '@router'
+
+    lsb_utility.dto.helper.crud.route.generator.new_resource:
+        alias: 'LSB\UtilityBundle\DataTransfer\Helper\CRUD\Route\NewResourceGetRouteGenerator'
+
+    LSB\UtilityBundle\DataTransfer\Helper\CRUD\Route\RouteGeneratorInterface:
+        alias: 'LSB\UtilityBundle\DataTransfer\Helper\CRUD\Route\NewResourceGetRouteGenerator'
+
     ### Validator
     LSB\UtilityBundle\Validator\ManagerChoiceValidator:
         arguments:

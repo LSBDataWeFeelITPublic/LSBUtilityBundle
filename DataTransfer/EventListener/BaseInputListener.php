@@ -94,6 +94,7 @@ abstract class BaseInputListener extends BaseListener
                     if (!$resource->getIsActionDisabled() && $inputDTO->isValid()) {
                         $object = $this->DTOService->createNewFromDTO($resource, $inputDTO, $request);
                         $requestData->setObject($object);
+                        $requestData->setIsObjectCreated($inputDTO->isNewObjectCreated());
                     }
 
                     $requestData->setInputDTO($inputDTO);
@@ -101,8 +102,6 @@ abstract class BaseInputListener extends BaseListener
                 case Request::METHOD_PATCH:
                 case Request::METHOD_PUT:
                     $inputDTO = $this->prepareInputDTO($request, $resource);
-                    $requestData->setInputDTO($inputDTO);
-
 
                     if (!$resource->getIsSecurityCheckDisabled()) {
                         if ($inputDTO->getObject() && $this->DTOService->isGranted($resource, $request, $resource->getVoterAction() ?? ($request->getMethod() === Request::METHOD_PUT ? BaseObjectVoter::ACTION_PUT : BaseObjectVoter::ACTION_PATCH), $inputDTO->getObject())) {
@@ -116,12 +115,14 @@ abstract class BaseInputListener extends BaseListener
 
                     if (!$resource->getIsActionDisabled() && $inputDTO->isValid()) {
                         $object = $this->DTOService->updateFromDTO($resource, $inputDTO, $request, $this->DTOService->getAppCode($request));
+                        $requestData->setIsObjectCreated($inputDTO->isNewObjectCreated());
 
                         if (!$requestData->getObject()) {
                             $requestData->setObject($object);
                         }
                     }
-                    //$requestData->setInputDTO($inputDTO);
+
+                $requestData->setInputDTO($inputDTO);
                     break;
                 case Request::METHOD_DELETE:
                     if ($resource->getIsActionDisabled()) {
@@ -238,7 +239,6 @@ abstract class BaseInputListener extends BaseListener
             $requestData->setInputDTO($inputDTO);
         }
 
-
         RequestAttributes::updateRequestData($request, $requestData);
     }
 
@@ -310,26 +310,6 @@ abstract class BaseInputListener extends BaseListener
         if (!$resource->getInputCreateDTOClass()) {
             throw new \Exception('Input Create DTO Class is missing.');
         }
-        //Na tym etapie obiekt DTO nie posiada zagnieżdzonych input dto dla tłumaczeń
-
-        //Symfony serializer
-
-        $serializer = new Serializer(
-            [
-                new ArrayDenormalizer(),
-                new DateTimeNormalizer(),
-                new ObjectNormalizer(
-                    null,
-                    null,
-                    null,
-                    new ReflectionExtractor()
-                ),
-            ],
-            [
-                new JsonEncoder(),
-            ]
-        );
-
 
         try {
             $dto = $this->serializer->deserialize(
@@ -338,8 +318,6 @@ abstract class BaseInputListener extends BaseListener
                 $request->getFormat($request->headers->get('Content-Type')),
                 $context
             );
-
-            //$dto = $serializer->deserialize($request->getContent(), $resource->getInputCreateDTOClass(), 'json', [AbstractNormalizer::OBJECT_TO_POPULATE => $dto]);
 
 
             /**
@@ -363,9 +341,6 @@ abstract class BaseInputListener extends BaseListener
 
             $dto->addError(InputDTOInterface::ERROR_DESERIALIZATION, $e->getMessage());
         }
-
-        //TODO usunac
-        //Zafixowane zasilanie kolekcji - utworzone obiekty są poprawne, ale nie posiadają relacji do obiektu zagniezdzonego
 
         //Assign collections
         $propertyAccessor = new PropertyAccessor();

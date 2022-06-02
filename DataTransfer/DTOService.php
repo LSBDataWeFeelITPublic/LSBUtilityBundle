@@ -78,7 +78,7 @@ class DTOService
      * @return object
      * @throws \Exception
      */
-    public function createNewFromDTO(Resource $resource, $inputDTO, Request $request, ?string $appCode = null): object
+    public function createNewFromDTO(Resource $resource, DTOInterface $inputDTO, Request $request, ?string $appCode = null): object
     {
         //No manager, object will not be persisted
         $manager = null;
@@ -96,6 +96,8 @@ class DTOService
         } else {
             $object = new ($resource->getObjectClass());
         }
+
+        $inputDTO->setIsNewObjectCreated(true);
 
 
         if ($resource->getSerializationType() === Resource::TYPE_DATA_TRANSFORMER) {
@@ -385,13 +387,13 @@ class DTOService
      */
     public function generateInputDTO(
         Resource           $resource,
-        ?RequestIdentifier  $requestIdentifier = null,
+        ?RequestIdentifier $requestIdentifier = null,
         ?InputDTOInterface $inputDTO = null,
         bool               $populate = true,
         bool               $createNewObject = false,
         int                $level = 0,
         bool               $isCollectionItem = false,
-        ?object             $object = null
+        ?object            $object = null
     ): InputDTOInterface {
 
         $manager = $this->managerContainer->getByManagerClass($resource->getManagerClass());
@@ -431,19 +433,15 @@ class DTOService
             throw new \Exception('Object does not exist.');
         } elseif ($createNewObject && !$object instanceof $entityClass) {
             if ($resource->getIsTranslation()) {
+                $inputDTO->setIsNewObjectCreated(true);
                 $object = $manager->createNewTranslation();
             } else {
+                $inputDTO->setIsNewObjectCreated(true);
                 $object = $manager->createNew();
             }
         }
 
         $inputDTO->setObject($object);
-
-//        dump('JAKIS OBIEKT');
-//        dump($object);
-//        dump('dump input dto get object');
-//        dump($inputDTO);
-//        dump('koniec input');
 
         if ($populate) {
             switch ($resource->getSerializationType()) {
@@ -470,7 +468,6 @@ class DTOService
         }
 
 
-
         return $inputDTO;
     }
 
@@ -490,7 +487,10 @@ class DTOService
     ): OutputDTOInterface {
 
         if ($populate) {
-            $this->populateDtoWithEntity(targetObject: $object, requestDTO: $requestDTO);
+            $this->populateDtoWithEntity(
+                targetObject: $object,
+                requestDTO: $requestDTO
+            );
         }
 
         //The entity will be used later.
@@ -1248,11 +1248,16 @@ class DTOService
                     } else {
                         $object = $manager->createNew();
                     }
+
+                    if ($data instanceof DTOInterface) {
+                        $data->setIsNewObjectCreated(true);
+                    }
                 }
 
                 //Sprawdzamy czy utworzony obiekt należy zasilić danymi
 
                 if ($data instanceof DTOInterface && $object) {
+                    // narazie populate nie jest potrzebne (if)
 //                    if ($populate) {
 
                     $this->populateEntityWithDTO(

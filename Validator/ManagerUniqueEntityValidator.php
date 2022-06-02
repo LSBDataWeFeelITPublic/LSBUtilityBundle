@@ -26,7 +26,7 @@ class ManagerUniqueEntityValidator extends ConstraintValidator
     }
 
     /**
-     * @param object $object
+     * @param \LSB\UtilityBundle\DataTransfer\Model\DTOInterface $object
      * @param \Symfony\Component\Validator\Constraint $constraint
      * @throws \Exception
      */
@@ -164,7 +164,9 @@ class ManagerUniqueEntityValidator extends ConstraintValidator
          * which is the same as the entity being validated, the criteria is
          * unique.
          */
-        if (!$result || (1 === \count($result) && current($result) === $object)) {
+
+
+        if (!$result || (1 === \count($result) && (current($result)) === $object?->getObject())) {
             return;
         }
 
