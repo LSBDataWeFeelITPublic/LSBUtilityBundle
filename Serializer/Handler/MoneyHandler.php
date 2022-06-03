@@ -79,18 +79,26 @@ class MoneyHandler implements SubscribingHandlerInterface
      * @param mixed $data
      * @throws \Exception
      */
-    public function deserializeMoney(DeserializationVisitorInterface $visitor, $data, array $type, DeserializationContext $context): Money
+    public function deserializeMoney(DeserializationVisitorInterface $visitor, $data, array $type, DeserializationContext $context): ?Money
     {
-        if (!is_array($data)) {
-            throw new RuntimeException("Array is required for Money type.");
+        if (!is_array($data) && $data !== null) {
+            throw new RuntimeException("Null or array is required for Money type.");
         }
 
-        if (!isset($data[self::KEY_CURRENCY])) {
-            throw new RuntimeException("Currency is required");
+        if ($data === null) {
+            return null;
         }
 
-        if (!isset($data[self::KEY_AMOUNT])) {
-            throw new RuntimeException("Amount is required.");
+        if (!array_key_exists(self::KEY_CURRENCY, $data)) {
+            throw new RuntimeException("Currency is required for Money.");
+        }
+
+        if (!array_key_exists(self::KEY_AMOUNT, $data)) {
+            throw new RuntimeException("Amount is required for Money.");
+        }
+
+        if (!isset($data[self::KEY_AMOUNT]) || !isset($data[self::KEY_CURRENCY])) {
+            return null;
         }
 
         $currency = (string)$data[self::KEY_CURRENCY];

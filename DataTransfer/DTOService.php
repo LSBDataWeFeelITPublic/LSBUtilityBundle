@@ -1156,142 +1156,147 @@ class DTOService
             $convertToObjectAttribute = $attributes[0]->newInstance();
         }
 
-        if ($convertToObjectAttribute->getManagerClass()) {
-            $manager = $this->getManagerContainer()->getByManagerClass($convertToObjectAttribute->getManagerClass());
+        if (!$convertToObjectAttribute->getManagerClass()) {
+            return null;
+        }
 
-            if (!$manager instanceof ManagerInterface) {
+        $manager = $this->getManagerContainer()->getByManagerClass($convertToObjectAttribute->getManagerClass());
+
+        if (!$manager instanceof ManagerInterface) {
+            return null;
+        }
+
+        if (!$data) {
+            if (!$propertyName) {
+                $propertyName = $reflectionProperty->getName();
+            }
+
+            $propertyAccessor = new PropertyAccessor();
+
+            if ($getterName) {
+                $data = $dto->$getterName();
+            } elseif ($propertyName) {
+                if (!$propertyAccessor->isReadable($dto, $propertyName)) {
+                    throw new \Exception(sprintf('Property %s is not readable.', $propertyName));
+                }
+
+                $data = $propertyAccessor->getValue($dto, $propertyName);
+            } else {
+                throw new \Exception('Getter or property name is required.');
+            }
+        }
+
+        if (is_iterable($data)) {
+            $items = $data instanceof Collection ? new ArrayCollection() : [];
+
+            foreach ($data as $datum) {
+
+                $objectHolder = $this->convertValueToObjectHolder(
+                    reflectionProperty: null,
+                    dto: null,
+                    getterName: $getterName,
+                    propertyName: null,
+                    request: $request,
+                    isCollectionItem: true,
+                    convertToObjectAttribute: $convertToObjectAttribute,
+                    data: $datum,
+                    level: $level + 1
+                );
+
+                if ($objectHolder) {
+                    if ($items instanceof ArrayCollection) {
+                        $items->add($objectHolder->getObject());
+                    } else {
+                        $items[] = $objectHolder->getObject();
+                    }
+                }
+            }
+
+            return new ObjectHolder(null, $items);
+
+        } else {
+            if ($data && !is_object($data) && (is_string($data) || is_scalar($data)) || $data instanceof Stringable
+            ) {
+                $id = $data;
+            } else {
+                $id = null;
+            }
+
+            if ($id) {
+                switch ($convertToObjectAttribute->getKey()) {
+                    case ConvertToObject::KEY_ID:
+                        $id = (int)$id;
+                        $object = $manager->getById($id);
+                        break;
+                    case ConvertToObject::KEY_UUID:
+                        $id = (string)$id;
+                        try {
+                            Assert::uuid($id);
+                        } catch (\Exception $e) {
+                            return null;
+                        }
+
+                        $object = $manager->getByUuid($id);
+                        break;
+                    default:
+                        $id = null;
+                        $object = null;
+                }
+            } elseif ($data instanceof DTOInterface && $data->getObject()) {
+                $object = $data->getObject();
+            } elseif ($convertToObjectAttribute->isCreateNewObject()) {
+                if ($convertToObjectAttribute->isTranslation()) {
+                    $object = $manager->createNewTranslation();
+                } else {
+                    $object = $manager->createNew();
+                }
+
+                if ($data instanceof DTOInterface) {
+                    $data->setIsNewObjectCreated(true);
+                }
+            } else {
                 return null;
             }
 
-            if (!$data) {
-                if (!$propertyName) {
-                    $propertyName = $reflectionProperty->getName();
-                }
+            //Sprawdzamy czy utworzony obiekt należy zasilić danymi
 
-                $propertyAccessor = new PropertyAccessor();
-
-                if ($getterName) {
-                    $data = $dto->$getterName();
-                } elseif ($propertyName) {
-                    if (!$propertyAccessor->isReadable($dto, $propertyName)) {
-                        throw new \Exception(sprintf('Property %s is not readable.', $propertyName));
-                    }
-
-                    $data = $propertyAccessor->getValue($dto, $propertyName);
-                } else {
-                    throw new \Exception('Getter or property name is required.');
-                }
-            }
-
-            if (is_iterable($data)) {
-                $items = $data instanceof Collection ? new ArrayCollection() : [];
-
-                foreach ($data as $datum) {
-
-                    $objectHolder = $this->convertValueToObjectHolder(
-                        reflectionProperty: null,
-                        dto: null,
-                        getterName: $getterName,
-                        propertyName: null,
-                        request: $request,
-                        isCollectionItem: true,
-                        convertToObjectAttribute: $convertToObjectAttribute,
-                        data: $datum,
-                        level: $level + 1
-                    );
-
-                    if ($objectHolder) {
-                        if ($items instanceof ArrayCollection) {
-                            $items->add($objectHolder->getObject());
-                        } else {
-                            $items[] = $objectHolder->getObject();
-                        }
-                    }
-                }
-
-                return new ObjectHolder(null, $items);
-
-            } else {
-                if ($data && !is_object($data) && (is_string($data) || is_scalar($data))
-                    || $data instanceof Stringable
-                ) {
-                    $id = $data;
-                } else {
-                    $id = null;
-                }
-
-                if ($id) {
-                    switch ($convertToObjectAttribute->getKey()) {
-                        case ConvertToObject::KEY_ID:
-                            $id = (int)$id;
-                            $object = $manager->getById($id);
-                            break;
-                        case ConvertToObject::KEY_UUID:
-                            $id = (string)$id;
-                            try {
-                                Assert::uuid($id);
-                            } catch (\Exception $e) {
-                                return null;
-                            }
-
-                            $object = $manager->getByUuid($id);
-                            break;
-                        default:
-                            $id = null;
-                            $object = null;
-                    }
-                } elseif ($data instanceof DTOInterface && $data->getObject()) {
-                    $object = $data->getObject();
-                } else {
-                    if ($convertToObjectAttribute->isTranslation()) {
-                        $object = $manager->createNewTranslation();
-                    } else {
-                        $object = $manager->createNew();
-                    }
-
-                    if ($data instanceof DTOInterface) {
-                        $data->setIsNewObjectCreated(true);
-                    }
-                }
-
-                //Sprawdzamy czy utworzony obiekt należy zasilić danymi
-
-                if ($data instanceof DTOInterface && $object) {
-                    // narazie populate nie jest potrzebne (if)
+            if ($data instanceof DTOInterface && $object) {
+                // narazie populate nie jest potrzebne (if)
 //                    if ($populate) {
 
-                    $this->populateEntityWithDTO(
-                        dto: $data,
-                        targetObject: $object,
-                        convertIdsIntoEntities: true,
-                        request: $request,
-                        appCode: $appCode,
-                        allowNestedObject: false
-                    );
+                $this->populateEntityWithDTO(
+                    dto: $data,
+                    targetObject: $object,
+                    convertIdsIntoEntities: true,
+                    request: $request,
+                    appCode: $appCode,
+                    allowNestedObject: false
+                );
 
-                    $data->setObject($object);
+                $data->setObject($object);
 //                    }
+            }
+
+            if ($object) {
+                //Optional type check
+                if ($convertToObjectAttribute->getObjectClass() && !$object instanceof ($convertToObjectAttribute->getObjectClass())) {
+                    throw new \Exception(sprintf("Wrong type. Expected %s got %s", $convertToObjectAttribute->getObjectClass(), get_class($object)));
                 }
 
-                if ($object) {
-                    //Optional type check
-                    if ($convertToObjectAttribute->getObjectClass() && !$object instanceof ($convertToObjectAttribute->getObjectClass())) {
-                        throw new \Exception(sprintf("Wrong type. Expected %s got %s", $convertToObjectAttribute->getObjectClass(), get_class($object)));
+                //Optional security check
+                if ($convertToObjectAttribute->getVoterAction()) {
+                    if (!$this->isSubjectGranted($convertToObjectAttribute->getManagerClass(), $request, $convertToObjectAttribute->getVoterAction(), $object)) {
+                        throw new \Exception(sprintf("Access denied. Class: %s, object: %s", $convertToObjectAttribute->getObjectClass(), $id));
                     }
-
-                    //Optional security check
-                    if ($convertToObjectAttribute->getVoterAction()) {
-                        if (!$this->isSubjectGranted($convertToObjectAttribute->getManagerClass(), $request, $convertToObjectAttribute->getVoterAction(), $object)) {
-                            throw new \Exception(sprintf("Access denied. Class: %s, object: %s", $convertToObjectAttribute->getObjectClass(), $id));
-                        }
-                    }
-
-                    return new ObjectHolder($id, $object);
-                } elseif ($id && $convertToObjectAttribute->isThrowNotFoundException()) {
-                    throw new \Exception(sprintf("Property: %s; Object %s has not been found. ", $reflectionProperty->getName(), $id));
                 }
+
+                return new ObjectHolder($id, $object);
+            } elseif ($id && $convertToObjectAttribute->isThrowNotFoundException()) {
+                throw new \Exception(sprintf("Property: %s; Object %s has not been found. ", $reflectionProperty->getName(), $id));
             }
         }
+
+
         return null;
     }
 

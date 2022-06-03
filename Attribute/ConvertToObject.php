@@ -25,6 +25,7 @@ class ConvertToObject
      * @param string|null $objectClass Entity FQCN
      * @param bool $isTranslation
      * @param bool $useObjectId
+     * @param bool $createNewObject
      */
     public function __construct(
         protected int     $key = self::KEY_UUID,
@@ -33,7 +34,8 @@ class ConvertToObject
         protected bool    $throwNotFoundException = false,
         protected ?string $objectClass = null,
         protected bool    $isTranslation = false,
-        protected bool    $useObjectId = false
+        protected bool    $useObjectId = false,
+        protected bool    $createNewObject = true
     ) {
     }
 
@@ -160,6 +162,24 @@ class ConvertToObject
     public function setUseObjectId(bool $useObjectId): ConvertToObject
     {
         $this->useObjectId = $useObjectId;
+        return $this;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isCreateNewObject(): bool
+    {
+        return $this->createNewObject;
+    }
+
+    /**
+     * @param bool $createNewObject
+     * @return ConvertToObject
+     */
+    public function setCreateNewObject(bool $createNewObject): ConvertToObject
+    {
+        $this->createNewObject = $createNewObject;
         return $this;
     }
 }

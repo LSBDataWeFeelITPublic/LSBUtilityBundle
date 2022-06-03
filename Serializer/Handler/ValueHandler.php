@@ -74,23 +74,23 @@ class ValueHandler implements SubscribingHandlerInterface
     /**
      * @param mixed $data
      */
-    public function deserializeValue(DeserializationVisitorInterface $visitor, $data, array $type, DeserializationContext $context): Value
+    public function deserializeValue(DeserializationVisitorInterface $visitor, $data, array $type, DeserializationContext $context): ?Value
     {
-        if (!is_array($data)) {
-            throw new RuntimeException("Array is required for Money type.");
+        if (!is_array($data) && $data !== null) {
+            throw new RuntimeException("Null or array is required for Value type.");
+        }
+
+        if ($data === null) {
+            return null;
+        }
+
+        if (!array_key_exists('amount', $data)) {
+            throw new RuntimeException("Amount is required for Value.");
         }
 
         if (!isset($data[self::KEY_AMOUNT])) {
-            throw new RuntimeException("Amount is required");
+            return null;
         }
-
-//        if (!isset($data[self::KEY_UNIT])) {
-//            throw new RuntimeException("Unit is required.");
-//        }
-
-//        if (!isset($data[self::KEY_PRECISION])) {
-//            throw new RuntimeException("Precision is required.");
-//        }
 
         return ValueHelper::convertToValue(
             (float)$data[self::KEY_AMOUNT],
