@@ -12,6 +12,8 @@ use JMS\Serializer\Visitor\DeserializationVisitorInterface;
 use JMS\Serializer\Visitor\SerializationVisitorInterface;
 use LSB\UtilityBundle\Helper\ValueHelper;
 use LSB\UtilityBundle\Value\Value;
+use LSB\UtilityBundle\Serializer\Handler\Helper\HandlerHelper;
+
 
 class ValueHandler implements SubscribingHandlerInterface
 {
@@ -75,7 +77,9 @@ class ValueHandler implements SubscribingHandlerInterface
      * @param mixed $data
      */
     public function deserializeValue(DeserializationVisitorInterface $visitor, $data, array $type, DeserializationContext $context): ?Value
-    {
+   {
+        $currentPathString = HandlerHelper::getCurrentPath($context);
+
         if (!is_array($data) && $data !== null) {
             throw new RuntimeException("Null or array is required for Value type.");
         }
@@ -85,7 +89,7 @@ class ValueHandler implements SubscribingHandlerInterface
         }
 
         if (!array_key_exists('amount', $data)) {
-            throw new RuntimeException("Amount is required for Value.");
+            throw new RuntimeException("{$currentPathString}: key 'amount' is required for Value.");
         }
 
         if (!isset($data[self::KEY_AMOUNT])) {

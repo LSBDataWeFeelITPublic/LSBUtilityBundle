@@ -11,6 +11,7 @@ use JMS\Serializer\SerializationContext;
 use JMS\Serializer\Visitor\DeserializationVisitorInterface;
 use JMS\Serializer\Visitor\SerializationVisitorInterface;
 use Money\Money;
+use LSB\UtilityBundle\Serializer\Handler\Helper\HandlerHelper;
 
 /**
  * Class MoneyHandler
@@ -81,6 +82,8 @@ class MoneyHandler implements SubscribingHandlerInterface
      */
     public function deserializeMoney(DeserializationVisitorInterface $visitor, $data, array $type, DeserializationContext $context): ?Money
     {
+        $currentPathString = HandlerHelper::getCurrentPath($context);
+
         if (!is_array($data) && $data !== null) {
             throw new RuntimeException("Null or array is required for Money type.");
         }
@@ -90,11 +93,11 @@ class MoneyHandler implements SubscribingHandlerInterface
         }
 
         if (!array_key_exists(self::KEY_CURRENCY, $data)) {
-            throw new RuntimeException("Currency is required for Money.");
+            throw new RuntimeException("{$currentPathString}: key: 'currency' is required for Money.");
         }
 
         if (!array_key_exists(self::KEY_AMOUNT, $data)) {
-            throw new RuntimeException("Amount is required for Money.");
+            throw new RuntimeException("{$currentPathString}: key: 'amount' is required for Money.");
         }
 
         if (!isset($data[self::KEY_AMOUNT]) || !isset($data[self::KEY_CURRENCY])) {
