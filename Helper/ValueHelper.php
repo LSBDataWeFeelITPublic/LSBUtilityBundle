@@ -5,7 +5,9 @@ namespace LSB\UtilityBundle\Helper;
 
 use Alcohol\ISO4217;
 use LSB\UtilityBundle\Value\Value;
+use Money\Currencies\ISOCurrencies;
 use Money\Currency;
+use Money\Formatter\IntlMoneyFormatter;
 use Money\Money;
 
 /**
@@ -15,6 +17,7 @@ use Money\Money;
 class ValueHelper
 {
     const DEFAULT_PRECISION = 2;
+    const DEFAULT_LOCALE = 'pl_PL';
 
     /**
      * @param float|string|null $value
@@ -205,5 +208,28 @@ class ValueHelper
     {
         $currency = new Currency($currencyIsoCode);
         return new Money(0, $currency);
+    }
+
+    /**
+     * @param \Money\Money $money
+     * @param string $locale
+     * @return string|null
+     */
+    public static function formatMoney(Money $money, string $locale = self::DEFAULT_LOCALE): ?string
+    {
+        $currencies = new ISOCurrencies();
+        $numberFormatter = new \NumberFormatter($locale, \NumberFormatter::CURRENCY);
+        $moneyFormatter = new IntlMoneyFormatter($numberFormatter, $currencies);
+
+        return $moneyFormatter->format($money);
+    }
+
+    /**
+     * @param \LSB\UtilityBundle\Value\Value $value
+     * @return string|null
+     */
+    public static function formatValue(Value $value): ?string
+    {
+        return sprintf("%s%s", $value->getRealStringAmount(), $value->getUnit() ? " {$value->getUnit()}" : "");
     }
 }

@@ -278,9 +278,8 @@ final class Value
      */
     public function compare(Value $other): int
     {
-        // Note: non-strict equality is intentional here, since `Currency` is `final` and reliable.
         if ($this->unit != $other->unit) {
-            throw new \Exception('Currencies must be identical');
+            throw new \Exception('Units must be identical');
         }
 
         return BcMathCalculator::compare($this->amount, $other->amount);

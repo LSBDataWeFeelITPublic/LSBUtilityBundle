@@ -96,8 +96,8 @@ class ValueHandler implements SubscribingHandlerInterface
             return null;
         }
 
-        return ValueHelper::convertToValue(
-            (float)$data[self::KEY_AMOUNT],
+        return ValueHelper::intToValue(
+            (int) $data[self::KEY_AMOUNT],
             isset($data[self::KEY_UNIT]) ? (string)$data[self::KEY_UNIT] : null,
             isset($data[self::KEY_PRECISION]) ? (int)$data[self::KEY_PRECISION] : null
         );

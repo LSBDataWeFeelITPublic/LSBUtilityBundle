@@ -104,6 +104,7 @@ services:
         alias: 'LSB\UtilityBundle\DataTransfer\Helper\CRUD\Route\NewResourceGetRouteGenerator'
 
     ### Validator
+
     LSB\UtilityBundle\Validator\ManagerChoiceValidator:
         arguments:
             - '@lsb_utility.manager.container'
@@ -127,3 +128,103 @@ services:
             - { name: validator.constraint_validator }
 
     lsb_utility.validator.manager_callback: '@LSB\UtilityBundle\Validator\ManagerCallbackValidator'
+
+    #### Value
+
+    LSB\UtilityBundle\Validator\ValueNotEqualToValidator:
+        arguments:
+            - '@parameter_bag'
+        tags:
+            - { name: validator.constraint_validator }
+
+    lsb_utility.validator.value_not_equal_to: '@LSB\UtilityBundle\Validator\ValueNotEqualToValidator'
+
+    LSB\UtilityBundle\Validator\ValueEqualToValidator:
+        arguments:
+            - '@parameter_bag'
+        tags:
+            - { name: validator.constraint_validator }
+
+    lsb_utility.validator.value_equal_to: '@LSB\UtilityBundle\Validator\ValueEqualToValidator'
+
+    LSB\UtilityBundle\Validator\ValueGreaterThanValidator:
+        arguments:
+            - '@parameter_bag'
+        tags:
+            - { name: validator.constraint_validator }
+
+    lsb_utility.validator.value_greater_than: '@LSB\UtilityBundle\Validator\ValueGraterThanValidator'
+
+    LSB\UtilityBundle\Validator\ValueGreaterThanOrEqualValidator:
+        arguments:
+            - '@parameter_bag'
+        tags:
+            - { name: validator.constraint_validator }
+
+    lsb_utility.validator.value_greater_than_or_equal: '@LSB\UtilityBundle\Validator\ValueGreaterThanOrEqualValidator'
+
+    LSB\UtilityBundle\Validator\ValueLessThanValidator:
+        arguments:
+            - '@parameter_bag'
+        tags:
+            - { name: validator.constraint_validator }
+
+    lsb_utility.validator.value_less_than: '@LSB\UtilityBundle\Validator\ValueLessThanValidator'
+
+    LSB\UtilityBundle\Validator\ValueLessThanOrEqualValidator:
+        arguments:
+            - '@parameter_bag'
+        tags:
+            - { name: validator.constraint_validator }
+
+    lsb_utility.validator.value_less_than_or_equal: '@LSB\UtilityBundle\Validator\ValueLessThanOrEqualValidator'
+
+    #### Money
+
+    LSB\UtilityBundle\Validator\MoneyNotEqualToValidator:
+        arguments:
+            - '@parameter_bag'
+        tags:
+            - { name: validator.constraint_validator }
+
+    lsb_utility.validator.money_not_equal_to: '@LSB\UtilityBundle\Validator\MoneyNotEqualToValidator'
+
+    LSB\UtilityBundle\Validator\MoneyEqualToValidator:
+        arguments:
+            - '@parameter_bag'
+        tags:
+            - { name: validator.constraint_validator }
+
+    lsb_utility.validator.money_equal_to: '@LSB\UtilityBundle\Validator\MoneyEqualToValidator'
+
+    LSB\UtilityBundle\Validator\MoneyGreaterThanValidator:
+        arguments:
+            - '@parameter_bag'
+        tags:
+            - { name: validator.constraint_validator }
+
+    lsb_utility.validator.money_greater_than: '@LSB\UtilityBundle\Validator\MoneyGraterThanValidator'
+
+    LSB\UtilityBundle\Validator\MoneyGreaterThanOrEqualValidator:
+        arguments:
+            - '@parameter_bag'
+        tags:
+            - { name: validator.constraint_validator }
+
+    lsb_utility.validator.money_greater_than_or_equal: '@LSB\UtilityBundle\Validator\MoneyGreaterThanOrEqualValidator'
+
+    LSB\UtilityBundle\Validator\MoneyLessThanValidator:
+        arguments:
+            - '@parameter_bag'
+        tags:
+            - { name: validator.constraint_validator }
+
+    lsb_utility.validator.money_less_than: '@LSB\UtilityBundle\Validator\MoneyLessThanValidator'
+
+    LSB\UtilityBundle\Validator\MoneyLessThanOrEqualValidator:
+        arguments:
+            - '@parameter_bag'
+        tags:
+            - { name: validator.constraint_validator }
+
+    lsb_utility.validator.money_less_than_or_equal: '@LSB\UtilityBundle\Validator\MoneyLessThanOrEqualValidator'
