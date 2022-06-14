@@ -23,6 +23,7 @@ class DTOPropertyConfig
         protected ?string $DTOGetter = null,
         protected ?string $DTOSetter = null,
         protected ?string $DTOPropertyName = null,
+        protected ?bool $skip = null,
     ) {
     }
 
@@ -131,6 +132,24 @@ class DTOPropertyConfig
     public function setDTOPropertyName(?string $DTOPropertyName): DTOPropertyConfig
     {
         $this->DTOPropertyName = $DTOPropertyName;
+        return $this;
+    }
+
+    /**
+     * @return bool|null
+     */
+    public function getSkip(): ?bool
+    {
+        return $this->skip;
+    }
+
+    /**
+     * @param bool|null $skip
+     * @return DTOPropertyConfig
+     */
+    public function setSkip(?bool $skip): DTOPropertyConfig
+    {
+        $this->skip = $skip;
         return $this;
     }
 }

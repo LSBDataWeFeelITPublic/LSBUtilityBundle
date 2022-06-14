@@ -26,6 +26,8 @@ use LSB\UtilityBundle\Interfaces\UuidInterface;
 use LSB\UtilityBundle\Manager\ManagerInterface;
 use LSB\UtilityBundle\Repository\PaginationInterface as RepositoryPaginationInterface;
 use LSB\UtilityBundle\Service\ManagerContainerInterface;
+use LSB\UtilityBundle\Value\Value;
+use Money\Money;
 use Ramsey\Uuid\Nonstandard\Uuid;
 use ReflectionClass;
 use ReflectionProperty;
@@ -816,6 +818,10 @@ class DTOService
             $DTOPropertyConfig = self::getDTOPropertyConfig($reflectionProperty);
 
             if ($DTOPropertyConfig) {
+                if ($DTOPropertyConfig->getSkip()) {
+                    continue;
+                }
+
                 if ($DTOPropertyConfig->getDTOGetter()) {
                     $DTOObjectGetter = $DTOPropertyConfig->getDTOGetter();
                 }
@@ -923,6 +929,10 @@ class DTOService
             $targetObjectPropertyName = $reflectionPropertyDTO->getName();
 
             if ($DTOPropertyConfig) {
+                if ($DTOPropertyConfig->getSkip()) {
+                    continue;
+                }
+
                 if ($DTOPropertyConfig->getObjectGetter()) {
                     $targetObjectGetter = $DTOPropertyConfig->getObjectGetter();
                 }
@@ -966,6 +976,7 @@ class DTOService
             if (!is_object($value) && !is_iterable($value) || is_object($value) && $this->isStandardObject($value)) {
                 $valueDTO = $value;
             } elseif (is_object($value) && !is_iterable($value)) {
+
                 $itemResource = $this->getItemResource($this->getRealClass($value), $reflectionPropertyDTO, true);
 
                 if ($workflow === self::METHOD_WORKFLOW_OUTPUT) {
@@ -1030,6 +1041,8 @@ class DTOService
         switch (true) {
             case $object instanceof \DateTime:
             case $object instanceof \StdClass:
+            case $object instanceof Money:
+            case $object instanceof Value:
                 return true;
 
         }
