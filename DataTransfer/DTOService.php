@@ -806,8 +806,10 @@ class DTOService
             if (array_search($reflectionProperty->getName(), self::$excludedProps) !== false) {
                 continue;
             }
+            $objectHolder = null;
             $DTOObjectGetter = null;
             $setterMethod = null;
+            $targetValue = null;
             $DTOPropertyName = $reflectionProperty->getName();
             $targetObjectPropertyName = $reflectionProperty->getName();
 
@@ -861,7 +863,11 @@ class DTOService
                 if ($objectHolder instanceof ObjectHolder) {
                     $targetValue = $objectHolder->getObject();
                 } else {
-                    $targetValue = null;
+                    if ($reflectionProperty->getType() && $reflectionProperty->getType()->getName() == 'array') {
+                        $targetValue = [];
+                    } else {
+                        $targetValue = null;
+                    }
                 }
             } else {
                 $targetValue = $dtoValue;
@@ -1163,6 +1169,7 @@ class DTOService
         $manager = $this->getManagerContainer()->getByManagerClass($convertToObjectAttribute->getManagerClass());
 
         if (!$manager instanceof ManagerInterface) {
+            throw new \Exception(sprintf("Manager %s was not found.", $convertToObjectAttribute->getManagerClass()));
             return null;
         }
 

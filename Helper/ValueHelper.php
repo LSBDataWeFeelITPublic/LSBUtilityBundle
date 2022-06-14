@@ -112,10 +112,14 @@ class ValueHelper
      * @param int $precision
      * @return Value|null
      */
-    public static function intToValue(?int $amount, ?string $unit = null, int $precision = 2): ?Value
+    public static function intToValue(?int $amount, ?string $unit = null, ?int $precision = null): ?Value
     {
         if ($amount === null) {
             return null;
+        }
+
+        if ($precision === null) {
+            $precision = self::DEFAULT_PRECISION;
         }
 
         return new Value($amount, $unit, $precision);
@@ -135,6 +139,10 @@ class ValueHelper
 
         if ($amount === null) {
             return null;
+        }
+
+        if ($precision === null) {
+            $precision = self::DEFAULT_PRECISION;
         }
 
         $multipier = pow(10, $precision);

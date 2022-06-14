@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace LSB\UtilityBundle\DataTransfer\EventListener;
 
+use Doctrine\Common\Collections\ArrayCollection;
 use JMS\Serializer\DeserializationContext;
 use JMS\Serializer\Exception\RuntimeException;
 use JMS\Serializer\SerializerInterface;
@@ -122,7 +123,7 @@ abstract class BaseInputListener extends BaseListener
                         }
                     }
 
-                $requestData->setInputDTO($inputDTO);
+                    $requestData->setInputDTO($inputDTO);
                     break;
                 case Request::METHOD_DELETE:
                     if ($resource->getIsActionDisabled()) {
@@ -346,13 +347,30 @@ abstract class BaseInputListener extends BaseListener
         $propertyAccessor = new PropertyAccessor();
 
         if ($dto->getObject()) {
-            if ($propertyAccessor->isReadable($dto, 'translations')) {
-                foreach ($propertyAccessor->getValue($dto, 'translations') as $dtoTranslation) {
-                    $objectTranslation = $dto->getObject()->getTranslations()->get($dtoTranslation->locale);
-                    $dtoTranslation->setObject($objectTranslation);
+            $reflectionClass = new \ReflectionClass($dto);
+
+            foreach ($reflectionClass->getProperties() as $reflectionProperty) {
+                if (!in_array($reflectionProperty->getType()->getName(), ['array', ArrayCollection::class])) {
+                    continue;
+                }
+
+                if ($reflectionProperty->getName() == 'translations') {
+                    if ($propertyAccessor->isReadable($dto, 'translations')) {
+                        foreach ($propertyAccessor->getValue($dto, 'translations') as $dtoTranslation) {
+                            $objectTranslation = $dto->getObject()->getTranslations()->get($dtoTranslation->locale);
+                            $dtoTranslation->setObject($objectTranslation);
+                        }
+                    }
+                } else {
+                    if ($propertyAccessor->isReadable($dto, $reflectionProperty->getName())) {
+                        foreach ($propertyAccessor->getValue($dto, $reflectionProperty->getName()) as $key => $dtoCollection) {
+                            dump($dtoCollection);
+                        }
+                    }
                 }
             }
         }
+
 
         return $dto;
     }
