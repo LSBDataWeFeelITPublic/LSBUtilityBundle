@@ -188,7 +188,7 @@ class DTOService
      * @param object $object
      * @param \LSB\UtilityBundle\DataTransfer\Model\Output\OutputDTOInterface|null $outputDTO
      * @param null $deserializationType
-     * @param int $level
+     * @param int $nestingLevel
      * @param bool $isCollectionItem
      * @return \LSB\UtilityBundle\DataTransfer\Model\Output\OutputDTOInterface|null
      * @throws \ReflectionException
@@ -198,11 +198,11 @@ class DTOService
         object              $object,
         ?OutputDTOInterface $outputDTO = null,
                             $deserializationType = null,
-        int                 $level = 0,
+        int                 $nestingLevel = 0,
         bool                $isCollectionItem = false
     ): ?OutputDTOInterface {
         //TODO add max level to resource configuration
-        if ($level >= self::NESTING_LEVEL_MAX || $level === self::NESTING_LEVEL_BLOCKED) {
+        if ($nestingLevel >= self::NESTING_LEVEL_MAX || $nestingLevel === self::NESTING_LEVEL_BLOCKED) {
             return null;
         }
 
@@ -254,7 +254,7 @@ class DTOService
                             $item,
                             $itemOutputDTO,
                             $resource->getCollectionItemSerializationType(),
-                            $level + 1,
+                            $nestingLevel + 1,
                             true
                         );
                     }
@@ -393,7 +393,7 @@ class DTOService
         ?InputDTOInterface $inputDTO = null,
         bool               $populate = true,
         bool               $createNewObject = false,
-        int                $level = 0,
+        int                $nestingLevel = 0,
         bool               $isCollectionItem = false,
         ?object            $object = null
     ): InputDTOInterface {
@@ -451,7 +451,8 @@ class DTOService
                     $this->populateDtoWithEntity(
                         targetObject: $object,
                         requestDTO: $inputDTO,
-                        workflow: DTOService::METHOD_WORKFLOW_INPUT
+                        workflow: DTOService::METHOD_WORKFLOW_INPUT,
+                        nestingLevel: $nestingLevel
                     );
                     break;
 
@@ -905,13 +906,21 @@ class DTOService
         BaseDTO   $requestDTO,
         ?Resource $resource = null,
         bool      $allowNestedObject = true,
-        int       $workflow = self::METHOD_WORKFLOW_OUTPUT
+        int       $workflow = self::METHOD_WORKFLOW_OUTPUT,
+        int $nestingLevel = null
 
     ): void {
         $propertiesFilter = ReflectionProperty::IS_PUBLIC | ReflectionProperty::IS_PROTECTED | ReflectionProperty::IS_PRIVATE;
         $reflectionDTO = new ReflectionClass($requestDTO);
         $reflectionPropertiesDTO = $reflectionDTO->getProperties($propertiesFilter);
-        $nestingLevel = $allowNestedObject ? self::NESTING_LEVEL_ALLOWED : self::NESTING_LEVEL_BLOCKED;
+        if ($nestingLevel === 0) {
+            $nestingLevel = $allowNestedObject ? self::NESTING_LEVEL_ALLOWED : self::NESTING_LEVEL_BLOCKED;
+        }
+
+        if ($nestingLevel > self::NESTING_LEVEL_MAX) {
+            return;
+        }
+
 
         /**
          * @var ReflectionProperty $reflectionPropertyDTO
@@ -976,14 +985,13 @@ class DTOService
             if (!is_object($value) && !is_iterable($value) || is_object($value) && $this->isStandardObject($value)) {
                 $valueDTO = $value;
             } elseif (is_object($value) && !is_iterable($value)) {
-
                 $itemResource = $this->getItemResource($this->getRealClass($value), $reflectionPropertyDTO, true);
 
                 if ($workflow === self::METHOD_WORKFLOW_OUTPUT) {
                     $valueDTO = $this->generateOutputDTO(
                         resource: $itemResource,
                         object: $value,
-                        level: $nestingLevel
+                        nestingLevel: $nestingLevel + 1
                     );
                 } else {
                     $valueDTO = null;
@@ -999,7 +1007,7 @@ class DTOService
                         $itemDTO = $this->generateOutputDTO(
                             resource: $itemResource,
                             object: $item,
-                            level: $nestingLevel,
+                            nestingLevel: $nestingLevel + 1,
                             isCollectionItem: true
                         );
                         $items[] = $itemDTO;
@@ -1009,7 +1017,7 @@ class DTOService
                         $itemDTO = $this->generateInputDTO(
                             resource: $itemResource,
                             createNewObject: true,
-                            level: $nestingLevel,
+                            nestingLevel: $nestingLevel + 1,
                             isCollectionItem: true,
                             object: $item
                         );

@@ -343,10 +343,11 @@ abstract class BaseInputListener extends BaseListener
             $dto->addError(InputDTOInterface::ERROR_DESERIALIZATION, $e->getMessage());
         }
 
-        //Assign collections
-        $propertyAccessor = new PropertyAccessor();
+
 
         if ($dto->getObject()) {
+            //Assign collections
+            $propertyAccessor = new PropertyAccessor();
             $reflectionClass = new \ReflectionClass($dto);
 
             foreach ($reflectionClass->getProperties() as $reflectionProperty) {
@@ -363,14 +364,21 @@ abstract class BaseInputListener extends BaseListener
                     }
                 } else {
                     if ($propertyAccessor->isReadable($dto, $reflectionProperty->getName())) {
-                        foreach ($propertyAccessor->getValue($dto, $reflectionProperty->getName()) as $key => $dtoCollection) {
-                            dump($dtoCollection);
+                        foreach ($propertyAccessor->getValue($dto, $reflectionProperty->getName()) as $key => $dtoCollectionItem) {
+                            $objectCollection = $propertyAccessor->getValue($dto->getObject(), $reflectionProperty->getName());
+                            foreach ($objectCollection as $objectCollectionItem) {
+                                if ($propertyAccessor->isReadable($dtoCollectionItem, 'uuid')
+                                    && $propertyAccessor->isReadable($objectCollectionItem, 'uuid')
+                                    && $propertyAccessor->getValue($dtoCollectionItem, 'uuid') == $propertyAccessor->getValue($objectCollectionItem, 'uuid')
+                                ) {
+                                    $dtoCollectionItem->setObject($objectCollectionItem);
+                                }
+                            }
                         }
                     }
                 }
             }
         }
-
 
         return $dto;
     }
