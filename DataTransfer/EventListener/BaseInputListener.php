@@ -267,8 +267,6 @@ abstract class BaseInputListener extends BaseListener
             $manager = null;
         }
 
-        $context = DeserializationContext::create();
-
         if ($resource->getIsCRUD() && !$manager instanceof ManagerInterface) {
             throw new \Exception('Manager is required.');
         }
@@ -302,9 +300,7 @@ abstract class BaseInputListener extends BaseListener
                     $request->getMethod() === Request::METHOD_PATCH,
                     $request->getMethod() === Request::METHOD_PUT
                 );
-
-                //Dodane w celach testowych
-                $context->setAttribute(ExistingObjectConstructor::ATTRIBUTE_TARGET, $dto);
+                
                 break;
         }
 
@@ -312,37 +308,7 @@ abstract class BaseInputListener extends BaseListener
             throw new \Exception('Input Create DTO Class is missing.');
         }
 
-        try {
-            $dto = $this->serializer->deserialize(
-                $request->getContent(),
-                $resource->getInputCreateDTOClass(),
-                $request->getFormat($request->headers->get('Content-Type')),
-                $context
-            );
-
-
-            /**
-             * @var ConstraintViolationList $error
-             */
-            $errors = $this->validator->validate($dto);
-
-            /**
-             * @var ConstraintViolation $error
-             */
-            foreach ($errors as $error) {
-                $dto->addError($error->getPropertyPath(), $error->getMessage());
-            }
-        } catch (RuntimeException $e) {
-            if (!$dto) {
-                $dto = new ($resource->getInputUpdateDTOClass())();
-                if (!$dto instanceof InputDTOInterface) {
-                    throw new \Exception('Input DTO class must implement InputDTOInterface.');
-                }
-            }
-
-            $dto->addError(InputDTOInterface::ERROR_DESERIALIZATION, $e->getMessage());
-        }
-
+        $this->DTOService->deserialize($request, $resource, $dto);
 
 
         if ($dto->getObject()) {
@@ -351,7 +317,47 @@ abstract class BaseInputListener extends BaseListener
             $reflectionClass = new \ReflectionClass($dto);
 
             foreach ($reflectionClass->getProperties() as $reflectionProperty) {
-                if (!in_array($reflectionProperty->getType()->getName(), ['array', ArrayCollection::class])) {
+
+                if (!$reflectionProperty->getType()->isBuiltin()) {
+                    try {
+                        $reflectionClass = new \ReflectionClass($reflectionProperty->getType()->getName());
+                    } catch (\Exception $e) {
+                        $reflectionClass = null;
+                    }
+                } else {
+                    $reflectionClass = null;
+                }
+
+                //TODO dodać weryfikację instanceof dla kazdej wlasnosci, pod katem istnienia obiektu input DTo, trzeba dodać relację do obiektu
+                //najlepiej w formie zagnieźdżonej
+
+                if ($reflectionClass && $reflectionClass->implementsInterface(InputDTOInterface::class)) {
+                    if ($propertyAccessor->isReadable($dto->getObject(), $reflectionProperty->getName())
+                        && $propertyAccessor->isReadable($dto, $reflectionProperty->getName())
+                    ) {
+                        $subDTO = $propertyAccessor->getValue($dto, $reflectionProperty->getName());
+                        if (!$subDTO instanceof InputDTOInterface) {
+                            continue;
+                        }
+
+                        $subObject = $propertyAccessor->getValue($dto->getObject(), $reflectionProperty->getName());
+
+                        //Sprawdzamy zgodność identyfikatora
+                        if ($propertyAccessor->isReadable($subDTO, 'uuid')
+                            && $propertyAccessor->isReadable($subObject, 'uuid')
+                            && $propertyAccessor->getValue($subDTO, 'uuid')
+                            && $propertyAccessor->getValue($subObject, 'uuid')
+                        ) {
+                            $subDTO->setObject($subObject);
+                        }
+                    }
+                }
+
+                if (!$reflectionProperty->getType() || !in_array($reflectionProperty->getType()->getName(), ['array', ArrayCollection::class])) {
+                    continue;
+                }
+
+                if (in_array($reflectionProperty->getName(), ['errors'])) {
                     continue;
                 }
 
@@ -379,6 +385,9 @@ abstract class BaseInputListener extends BaseListener
                 }
             }
         }
+
+        //Walidacja musi sie odbyc po podpieciu obiektow encji
+        $this->DTOService->validate($dto);
 
         return $dto;
     }

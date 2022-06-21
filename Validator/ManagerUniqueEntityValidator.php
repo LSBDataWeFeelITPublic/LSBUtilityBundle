@@ -165,7 +165,6 @@ class ManagerUniqueEntityValidator extends ConstraintValidator
          * unique.
          */
 
-
         if (!$result || (1 === \count($result) && (current($result)) === $object?->getObject())) {
             return;
         }

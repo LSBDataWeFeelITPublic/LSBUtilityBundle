@@ -13,6 +13,8 @@ use LSB\UtilityBundle\Attribute\Resource;
 use LSB\UtilityBundle\Controller\BaseApiController;
 use LSB\UtilityBundle\DataTransfer\DataTransformer\DataTransformerService;
 use LSB\UtilityBundle\DataTransfer\DataTransformer\EntityConverter;
+use LSB\UtilityBundle\DataTransfer\Helper\Deserializer\DTODeserializerInterface;
+use LSB\UtilityBundle\DataTransfer\Helper\Validator\DTOValidatorInterface;
 use LSB\UtilityBundle\DataTransfer\Model\BaseDTO;
 use LSB\UtilityBundle\DataTransfer\Model\DTOInterface;
 use LSB\UtilityBundle\DataTransfer\Model\Input\InputDTOInterface;
@@ -44,7 +46,7 @@ class DTOService
     const METHOD_WORKFLOW_INPUT = 10;
     const METHOD_WORKFLOW_OUTPUT = 20;
 
-    const NESTING_LEVEL_MAX = 1;
+    const NESTING_LEVEL_MAX = 12;
     const NESTING_LEVEL_BLOCKED = -100;
     const NESTING_LEVEL_ALLOWED = 0;
 
@@ -54,7 +56,9 @@ class DTOService
         protected AuthorizationCheckerInterface $authorizationChecker,
         protected PaginatorInterface            $paginator,
         protected ResourceHelper                $resourceHelper,
-        protected RequestStack                  $requestStack
+        protected RequestStack                  $requestStack,
+        protected DTOValidatorInterface         $DTOValidator,
+        protected DTODeserializerInterface      $DTODeserializer
     ) {
     }
 
@@ -277,7 +281,7 @@ class DTOService
                     throw new \Exception('Missing data transformer.');
                 }
             } else {
-                $this->populateDtoWithEntity(targetObject: $object, requestDTO: $outputDTO, resource: $resource);
+                $this->populateDtoWithEntity(targetObject: $object, requestDTO: $outputDTO, resource: $resource, nestingLevel: $nestingLevel + 1);
             }
         } else {
             if ($deserializationType === Resource::TYPE_DATA_TRANSFORMER) {
@@ -292,7 +296,7 @@ class DTOService
                     throw new \Exception('Missing data transformer.');
                 }
             } else {
-                $this->populateDtoWithEntity(targetObject: $object, requestDTO: $outputDTO, resource: $resource);
+                $this->populateDtoWithEntity(targetObject: $object, requestDTO: $outputDTO, resource: $resource, nestingLevel: $nestingLevel + 1);
             }
         }
 
@@ -430,6 +434,10 @@ class DTOService
             throw new \Exception('Input DTO class must implement InputDTOInterface');
         }
 
+        if ($nestingLevel > self::NESTING_LEVEL_MAX) {
+            return $inputDTO;
+        }
+
         //Verify object class
         if (!$createNewObject && !$object instanceof $entityClass) {
             throw new \Exception('Object does not exist.');
@@ -452,7 +460,7 @@ class DTOService
                         targetObject: $object,
                         requestDTO: $inputDTO,
                         workflow: DTOService::METHOD_WORKFLOW_INPUT,
-                        nestingLevel: $nestingLevel
+                        nestingLevel: $nestingLevel + 1
                     );
                     break;
 
@@ -877,6 +885,7 @@ class DTOService
                     }
                 }
             } else {
+                //
                 $targetValue = $dtoValue;
             }
 
@@ -907,20 +916,16 @@ class DTOService
         ?Resource $resource = null,
         bool      $allowNestedObject = true,
         int       $workflow = self::METHOD_WORKFLOW_OUTPUT,
-        int $nestingLevel = null
+        int       $nestingLevel = 0
 
     ): void {
         $propertiesFilter = ReflectionProperty::IS_PUBLIC | ReflectionProperty::IS_PROTECTED | ReflectionProperty::IS_PRIVATE;
         $reflectionDTO = new ReflectionClass($requestDTO);
         $reflectionPropertiesDTO = $reflectionDTO->getProperties($propertiesFilter);
-        if ($nestingLevel === 0) {
-            $nestingLevel = $allowNestedObject ? self::NESTING_LEVEL_ALLOWED : self::NESTING_LEVEL_BLOCKED;
-        }
 
         if ($nestingLevel > self::NESTING_LEVEL_MAX) {
             return;
         }
-
 
         /**
          * @var ReflectionProperty $reflectionPropertyDTO
@@ -994,7 +999,59 @@ class DTOService
                         nestingLevel: $nestingLevel + 1
                     );
                 } else {
-                    $valueDTO = null;
+
+                    if (!$reflectionPropertyDTO->getType()->isBuiltin()) {
+                        try {
+                            $reflectionClass = new \ReflectionClass($reflectionProperty->getType()->getName());
+                        } catch (\Exception $e) {
+                            $reflectionClass = null;
+                        }
+                    } else {
+                        $reflectionClass = null;
+                    }
+
+                    //TODO Przygotowanie obsługi zagnieżdzonych InputDTO
+                    if ($reflectionPropertyDTO->getType()->getName() === 'string' && $this->hasConvertToObjectAttribute($reflectionPropertyDTO)) {
+                        //Dokonujemy próby zamiany obiektu na string
+                        $convertToObjectAttribute = $this->getConvertToObjectAttribute($reflectionPropertyDTO);
+
+                        $keyPropertyName = null;
+
+                        switch($convertToObjectAttribute->getKey()) {
+                            case ConvertToObject::KEY_UUID:
+                                $keyPropertyName = 'uuid';
+                                break;
+                            default:
+                                $keyPropertyName = 'id';
+                                break;
+                        }
+
+                        $propertyAccessor = new PropertyAccessor();
+
+                        if ($propertyAccessor->isReadable($value, $keyPropertyName)) {
+                            $valueDTO = $propertyAccessor->getValue($value, $keyPropertyName);
+                        } else {
+                            $valueDTO = null;
+                        }
+                    } elseif (!$reflectionPropertyDTO->getType()->isBuiltin()
+                        && $reflectionClass
+                        && $reflectionClass->implementsInterface(InputDTOInterface::class)) {
+
+                        //Declaring class - klasa która zawiera deklarację tej własności
+                        //TODO do sprawdzenia czy nie weryfikacja tej klasy powinna się odbywać na poziomie klasy deklarującej
+                        $itemDTO = $this->generateInputDTO(
+                            resource: $itemResource,
+                            createNewObject: true,
+                            nestingLevel: $nestingLevel + 1,
+                            isCollectionItem: false,
+                            object: $value
+                        );
+
+                        $valueDTO = $itemDTO;
+                    }
+                    else {
+                        $valueDTO = null;
+                    }
                 }
 
             } elseif (is_iterable($value)) {
@@ -1147,6 +1204,24 @@ class DTOService
 
     /**
      * @param \ReflectionProperty $reflectionProperty
+     * @return \LSB\UtilityBundle\Attribute\ConvertToObject
+     */
+    protected function getConvertToObjectAttribute(ReflectionProperty $reflectionProperty): ConvertToObject
+    {
+        $attributes = $reflectionProperty->getAttributes(ConvertToObject::class);
+
+        if (count($attributes) === 0) {
+            throw new Exception(sprintf("ConvertToObject attribute was not found on property: %s", $reflectionProperty->getName()));
+        }
+
+        /** @var ConvertToObject $convertToObjectAttribute */
+        $convertToObjectAttribute = $attributes[0]->newInstance();
+
+        return $convertToObjectAttribute;
+    }
+
+    /**
+     * @param \ReflectionProperty $reflectionProperty
      * @param \LSB\UtilityBundle\DataTransfer\Model\DTOInterface $dto
      * @param string|null $getterName
      * @param string|null $propertyName
@@ -1162,7 +1237,7 @@ class DTOService
         ?string             $getterName = null,
         ?string             $propertyName = null,
         ?string             $appCode = null,
-        int                 $level = 0,
+        int                 $nestingLevel = 0,
         bool                $isCollectionItem = false,
         ?ConvertToObject    $convertToObjectAttribute = null,
         int|string|object   $data = null
@@ -1228,7 +1303,7 @@ class DTOService
                     isCollectionItem: true,
                     convertToObjectAttribute: $convertToObjectAttribute,
                     data: $datum,
-                    level: $level + 1
+                    nestingLevel: $nestingLevel + 1
                 );
 
                 if ($objectHolder) {
@@ -1345,5 +1420,25 @@ class DTOService
          */
         $attribute = $attributes[0]->newInstance();
         return $attribute instanceof DTOPropertyConfig ? $attribute : null;
+    }
+
+    /**
+     * @param \LSB\UtilityBundle\DataTransfer\Model\DTOInterface $dto
+     * @return void
+     */
+    public function validate(DTOInterface $dto): void
+    {
+        $this->DTOValidator->validate($dto);
+    }
+
+    /**
+     * @param \Symfony\Component\HttpFoundation\Request $request
+     * @param \LSB\UtilityBundle\Attribute\Resource $resource
+     * @param \LSB\UtilityBundle\DataTransfer\Model\Input\InputDTOInterface|null $existingDTO
+     * @return \LSB\UtilityBundle\DataTransfer\Model\Input\InputDTOInterface|null
+     */
+    public function deserialize(Request $request, Resource $resource, ?InputDTOInterface $existingDTO): ?InputDTOInterface
+    {
+        return $this->DTODeserializer->deserialize($request, $resource, $existingDTO);
     }
 }

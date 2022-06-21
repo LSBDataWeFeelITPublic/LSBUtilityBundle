@@ -62,10 +62,6 @@ abstract class BaseOutputListener extends BaseListener
             if ($requestData->getResource()->getIsCRUD()) {
                 switch ($event->getRequest()->getMethod()) {
                     case Request::METHOD_PATCH:
-                        if (!$requestData->isObjectFetched()) {
-                            [$result, $statusCode] = $this->prepareNotFoundResponse();
-                            break;
-                        }
 
                         if (!$requestData->isGranted()) {
                             [$result, $statusCode] = $this->prepareNotGrantedResponse();
@@ -75,6 +71,11 @@ abstract class BaseOutputListener extends BaseListener
                         if ($requestData->getInputDTO() && !$requestData->getInputDTO()->isValid()) {
                             $result = $requestData->getInputDTO();
                             $statusCode = Response::HTTP_BAD_REQUEST;
+                            break;
+                        }
+
+                        if (!$requestData->isObjectFetched()) {
+                            [$result, $statusCode] = $this->prepareNotFoundResponse();
                             break;
                         }
 

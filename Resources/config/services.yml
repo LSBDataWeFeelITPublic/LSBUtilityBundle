@@ -47,6 +47,8 @@ services:
             - '@knp_paginator'
             - '@lsb_utility.dto.resource.helper'
             - '@request_stack'
+            - '@lsb_utility.dto.helper.validator.default'
+            - '@lsb_utility.dto.helper.deserializer.jms'
 
     lsb_utility.dto.service:
         alias: 'LSB\UtilityBundle\DataTransfer\DTOService'
@@ -102,6 +104,27 @@ services:
 
     LSB\UtilityBundle\DataTransfer\Helper\CRUD\Route\RouteGeneratorInterface:
         alias: 'LSB\UtilityBundle\DataTransfer\Helper\CRUD\Route\NewResourceGetRouteGenerator'
+
+    LSB\UtilityBundle\DataTransfer\Helper\Validator\DefaultDTOValidator:
+        arguments:
+            - '@validator'
+
+    lsb_utility.dto.helper.validator.default:
+        alias: 'LSB\UtilityBundle\DataTransfer\Helper\Validator\DefaultDTOValidator'
+
+    LSB\UtilityBundle\DataTransfer\Helper\Validator\DTOValidatorInterface:
+        alias: 'LSB\UtilityBundle\DataTransfer\Helper\Validator\DefaultDTOValidator'
+
+
+    LSB\UtilityBundle\DataTransfer\Helper\Deserializer\JMSDTODeserializer:
+        arguments:
+            - '@jms_serializer'
+
+    lsb_utility.dto.helper.deserializer.jms:
+        alias: 'LSB\UtilityBundle\DataTransfer\Helper\Deserializer\JMSDTODeserializer'
+
+    LSB\UtilityBundle\DataTransfer\Helper\Deserializer\DTODeserializerInterface:
+        alias: 'LSB\UtilityBundle\DataTransfer\Helper\Deserializer\JMSDTODeserializer'
 
     ### Validator
 
