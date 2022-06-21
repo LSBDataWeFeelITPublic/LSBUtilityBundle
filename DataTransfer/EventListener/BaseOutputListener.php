@@ -21,8 +21,6 @@ use JMS\Serializer\SerializationContext;
 
 abstract class BaseOutputListener extends BaseListener
 {
-    const CONTENT_TYPE_DEFAULT = 'json';
-
     public function __construct(
         protected ManagerContainerInterface $managerContainer,
         protected ValidatorInterface        $validator,
@@ -49,8 +47,6 @@ abstract class BaseOutputListener extends BaseListener
         $result = null;
         $newResourceUrl = null;
         $statusCode = Response::HTTP_NO_CONTENT;
-
-        $apiVersionNumeric = $this->apiVersionGrabber->getVersion($event->getRequest(), true);
 
         $requestData = RequestAttributes::getOrCreateRequestData($event->getRequest());
 
@@ -191,27 +187,13 @@ abstract class BaseOutputListener extends BaseListener
             }
         }
 
-        $context = new SerializationContext();
-        $context
-            ->setVersion($apiVersionNumeric)
-            ->setSerializeNull(true);
-
-        if (count($requestData->getSerializationGroups()) === 0) {
-            $groups[] = BaseCRUDApiController::DEFAULT_SERIALIZATION_GROUP;
-        } else {
-            $groups = $requestData->getSerializationGroups();
-        }
-
-        $context->setGroups($groups);
-
-        $result = $requestData->getResponseContent() ?? $result;
-
+        //
         $response = (new Response)
             ->setStatusCode($requestData->getResponseStatusCode() ?? $statusCode);
 
         if ($result !== null) {
             $response
-                ->setContent($this->serializer->serialize($result, $event->getRequest()->getContentType() ?? self::CONTENT_TYPE_DEFAULT, $context));
+                ->setContent($this->DTOService->serialize($result, $event->getRequest(), $requestData));
         }
         if ($newResourceUrl) {
             $response->headers->set('Location', $newResourceUrl);

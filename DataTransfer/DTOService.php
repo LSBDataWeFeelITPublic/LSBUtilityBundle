@@ -14,6 +14,7 @@ use LSB\UtilityBundle\Controller\BaseApiController;
 use LSB\UtilityBundle\DataTransfer\DataTransformer\DataTransformerService;
 use LSB\UtilityBundle\DataTransfer\DataTransformer\EntityConverter;
 use LSB\UtilityBundle\DataTransfer\Helper\Deserializer\DTODeserializerInterface;
+use LSB\UtilityBundle\DataTransfer\Helper\Serializer\DTOSerializerInterface;
 use LSB\UtilityBundle\DataTransfer\Helper\Validator\DTOValidatorInterface;
 use LSB\UtilityBundle\DataTransfer\Model\BaseDTO;
 use LSB\UtilityBundle\DataTransfer\Model\DTOInterface;
@@ -21,6 +22,7 @@ use LSB\UtilityBundle\DataTransfer\Model\Input\InputDTOInterface;
 use LSB\UtilityBundle\DataTransfer\Model\ObjectHolder;
 use LSB\UtilityBundle\DataTransfer\Model\Output\OutputDTOInterface;
 use LSB\UtilityBundle\DataTransfer\Request\RequestAttributes;
+use LSB\UtilityBundle\DataTransfer\Request\RequestData;
 use LSB\UtilityBundle\DataTransfer\Request\RequestIdentifier;
 use LSB\UtilityBundle\DataTransfer\Resource\ResourceHelper;
 use LSB\UtilityBundle\Interfaces\IdInterface;
@@ -58,7 +60,8 @@ class DTOService
         protected ResourceHelper                $resourceHelper,
         protected RequestStack                  $requestStack,
         protected DTOValidatorInterface         $DTOValidator,
-        protected DTODeserializerInterface      $DTODeserializer
+        protected DTODeserializerInterface      $DTODeserializer,
+        protected DTOSerializerInterface        $DTOSerializer
     ) {
     }
 
@@ -1017,7 +1020,7 @@ class DTOService
 
                         $keyPropertyName = null;
 
-                        switch($convertToObjectAttribute->getKey()) {
+                        switch ($convertToObjectAttribute->getKey()) {
                             case ConvertToObject::KEY_UUID:
                                 $keyPropertyName = 'uuid';
                                 break;
@@ -1048,8 +1051,7 @@ class DTOService
                         );
 
                         $valueDTO = $itemDTO;
-                    }
-                    else {
+                    } else {
                         $valueDTO = null;
                     }
                 }
@@ -1422,23 +1424,18 @@ class DTOService
         return $attribute instanceof DTOPropertyConfig ? $attribute : null;
     }
 
-    /**
-     * @param \LSB\UtilityBundle\DataTransfer\Model\DTOInterface $dto
-     * @return void
-     */
     public function validate(DTOInterface $dto): void
     {
         $this->DTOValidator->validate($dto);
     }
 
-    /**
-     * @param \Symfony\Component\HttpFoundation\Request $request
-     * @param \LSB\UtilityBundle\Attribute\Resource $resource
-     * @param \LSB\UtilityBundle\DataTransfer\Model\Input\InputDTOInterface|null $existingDTO
-     * @return \LSB\UtilityBundle\DataTransfer\Model\Input\InputDTOInterface|null
-     */
     public function deserialize(Request $request, Resource $resource, ?InputDTOInterface $existingDTO): ?InputDTOInterface
     {
         return $this->DTODeserializer->deserialize($request, $resource, $existingDTO);
+    }
+
+    public function serialize($result, Request $request, RequestData $requestData, string|int|null $apiVersionNumeric = null): string
+    {
+        return $this->DTOSerializer->serialize($result, $request, $requestData, $apiVersionNumeric);
     }
 }

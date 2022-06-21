@@ -49,6 +49,7 @@ services:
             - '@request_stack'
             - '@lsb_utility.dto.helper.validator.default'
             - '@lsb_utility.dto.helper.deserializer.jms'
+            - '@lsb_utility.dto.helper.serializer.jms'
 
     lsb_utility.dto.service:
         alias: 'LSB\UtilityBundle\DataTransfer\DTOService'
@@ -125,6 +126,17 @@ services:
 
     LSB\UtilityBundle\DataTransfer\Helper\Deserializer\DTODeserializerInterface:
         alias: 'LSB\UtilityBundle\DataTransfer\Helper\Deserializer\JMSDTODeserializer'
+
+    LSB\UtilityBundle\DataTransfer\Helper\Serializer\JMSDTOSerializer:
+        arguments:
+            - '@jms_serializer'
+            - '@lsb_utility.api.version_grabber'
+
+    lsb_utility.dto.helper.serializer.jms:
+        alias: 'LSB\UtilityBundle\DataTransfer\Helper\Serializer\JMSDTOSerializer'
+
+    LSB\UtilityBundle\DataTransfer\Helper\Deserializer\DTOSerializerInterface:
+        alias: 'LSB\UtilityBundle\DataTransfer\Helper\Serializer\JMSDTOSserializer'
 
     ### Validator
 

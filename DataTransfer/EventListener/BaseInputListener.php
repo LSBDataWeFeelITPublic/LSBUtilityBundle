@@ -300,7 +300,7 @@ abstract class BaseInputListener extends BaseListener
                     $request->getMethod() === Request::METHOD_PATCH,
                     $request->getMethod() === Request::METHOD_PUT
                 );
-                
+
                 break;
         }
 
@@ -309,82 +309,6 @@ abstract class BaseInputListener extends BaseListener
         }
 
         $this->DTOService->deserialize($request, $resource, $dto);
-
-
-        if ($dto->getObject()) {
-            //Assign collections
-            $propertyAccessor = new PropertyAccessor();
-            $reflectionClass = new \ReflectionClass($dto);
-
-            foreach ($reflectionClass->getProperties() as $reflectionProperty) {
-
-                if (!$reflectionProperty->getType()->isBuiltin()) {
-                    try {
-                        $reflectionClass = new \ReflectionClass($reflectionProperty->getType()->getName());
-                    } catch (\Exception $e) {
-                        $reflectionClass = null;
-                    }
-                } else {
-                    $reflectionClass = null;
-                }
-
-                //TODO dodać weryfikację instanceof dla kazdej wlasnosci, pod katem istnienia obiektu input DTo, trzeba dodać relację do obiektu
-                //najlepiej w formie zagnieźdżonej
-
-                if ($reflectionClass && $reflectionClass->implementsInterface(InputDTOInterface::class)) {
-                    if ($propertyAccessor->isReadable($dto->getObject(), $reflectionProperty->getName())
-                        && $propertyAccessor->isReadable($dto, $reflectionProperty->getName())
-                    ) {
-                        $subDTO = $propertyAccessor->getValue($dto, $reflectionProperty->getName());
-                        if (!$subDTO instanceof InputDTOInterface) {
-                            continue;
-                        }
-
-                        $subObject = $propertyAccessor->getValue($dto->getObject(), $reflectionProperty->getName());
-
-                        //Sprawdzamy zgodność identyfikatora
-                        if ($propertyAccessor->isReadable($subDTO, 'uuid')
-                            && $propertyAccessor->isReadable($subObject, 'uuid')
-                            && $propertyAccessor->getValue($subDTO, 'uuid')
-                            && $propertyAccessor->getValue($subObject, 'uuid')
-                        ) {
-                            $subDTO->setObject($subObject);
-                        }
-                    }
-                }
-
-                if (!$reflectionProperty->getType() || !in_array($reflectionProperty->getType()->getName(), ['array', ArrayCollection::class])) {
-                    continue;
-                }
-
-                if (in_array($reflectionProperty->getName(), ['errors'])) {
-                    continue;
-                }
-
-                if ($reflectionProperty->getName() == 'translations') {
-                    if ($propertyAccessor->isReadable($dto, 'translations')) {
-                        foreach ($propertyAccessor->getValue($dto, 'translations') as $dtoTranslation) {
-                            $objectTranslation = $dto->getObject()->getTranslations()->get($dtoTranslation->locale);
-                            $dtoTranslation->setObject($objectTranslation);
-                        }
-                    }
-                } else {
-                    if ($propertyAccessor->isReadable($dto, $reflectionProperty->getName())) {
-                        foreach ($propertyAccessor->getValue($dto, $reflectionProperty->getName()) as $key => $dtoCollectionItem) {
-                            $objectCollection = $propertyAccessor->getValue($dto->getObject(), $reflectionProperty->getName());
-                            foreach ($objectCollection as $objectCollectionItem) {
-                                if ($propertyAccessor->isReadable($dtoCollectionItem, 'uuid')
-                                    && $propertyAccessor->isReadable($objectCollectionItem, 'uuid')
-                                    && $propertyAccessor->getValue($dtoCollectionItem, 'uuid') == $propertyAccessor->getValue($objectCollectionItem, 'uuid')
-                                ) {
-                                    $dtoCollectionItem->setObject($objectCollectionItem);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
 
         //Walidacja musi sie odbyc po podpieciu obiektow encji
         $this->DTOService->validate($dto);
