@@ -5,9 +5,10 @@ namespace LSB\UtilityBundle\DataTransfer\EventListener;
 
 use JMS\Serializer\SerializerInterface;
 use LSB\UtilityBundle\Attribute\Resource;
-use LSB\UtilityBundle\Controller\BaseCRUDApiController;
 use LSB\UtilityBundle\DataTransfer\DTOService;
 use LSB\UtilityBundle\DataTransfer\Helper\CRUD\Route\RouteGeneratorInterface;
+use LSB\UtilityBundle\DataTransfer\Helper\Output\OutputHelper;
+use LSB\UtilityBundle\DataTransfer\Helper\Output\ResponseHelper;
 use LSB\UtilityBundle\DataTransfer\Model\Output\OutputDTOInterface;
 use LSB\UtilityBundle\DataTransfer\Request\RequestAttributes;
 use LSB\UtilityBundle\DataTransfer\Resource\ResourceHelper;
@@ -17,7 +18,6 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Event\ViewEvent;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
-use JMS\Serializer\SerializationContext;
 
 abstract class BaseOutputListener extends BaseListener
 {
@@ -47,7 +47,6 @@ abstract class BaseOutputListener extends BaseListener
         $result = null;
         $newResourceUrl = null;
         $statusCode = Response::HTTP_NO_CONTENT;
-
         $requestData = RequestAttributes::getOrCreateRequestData($event->getRequest());
 
         if (!$requestData->getResource() || $requestData->getResource()->getIsDisabled() === true) {
@@ -60,18 +59,17 @@ abstract class BaseOutputListener extends BaseListener
                     case Request::METHOD_PATCH:
 
                         if (!$requestData->isGranted()) {
-                            [$result, $statusCode] = $this->prepareNotGrantedResponse();
+                            [$result, $statusCode] = ResponseHelper::prepareNotGrantedResponse();
                             break;
                         }
 
                         if ($requestData->getInputDTO() && !$requestData->getInputDTO()->isValid()) {
-                            $result = $requestData->getInputDTO();
-                            $statusCode = Response::HTTP_BAD_REQUEST;
+                            [$result, $statusCode] = ResponseHelper::prepareBadRequestResponse($requestData->getInputDTO());
                             break;
                         }
 
                         if (!$requestData->isObjectFetched()) {
-                            [$result, $statusCode] = $this->prepareNotFoundResponse();
+                            [$result, $statusCode] = ResponseHelper::prepareNotFoundResponse();
                             break;
                         }
 
@@ -79,19 +77,17 @@ abstract class BaseOutputListener extends BaseListener
                             $this->processOutputDTO($requestData->getObject(), $requestData->getOutputDTO(), $event->getRequest(), $requestData->getResource())
                         );
 
-                        $result = $requestData->getOutputDTO();
-                        $statusCode = Response::HTTP_OK;
+                        [$result, $statusCode] = ResponseHelper::prepareOKResponse($requestData->getOutputDTO());
                         break;
                     case Request::METHOD_POST:
                     case Request::METHOD_PUT:
                         if (!$requestData->isGranted()) {
-                            [$result, $statusCode] = $this->prepareNotGrantedResponse();
+                            [$result, $statusCode] = ResponseHelper::prepareNotGrantedResponse();
                             break;
                         }
 
                         if ($requestData->getInputDTO() && !$requestData->getInputDTO()->isValid()) {
-                            $result = $requestData->getInputDTO();
-                            $statusCode = Response::HTTP_BAD_REQUEST;
+                            [$result, $statusCode] = ResponseHelper::prepareBadRequestResponse($requestData->getInputDTO());
                             break;
                         }
 
@@ -101,7 +97,7 @@ abstract class BaseOutputListener extends BaseListener
                     case Request::METHOD_GET:
                         if ($requestData->getResource()->getIsCollection()) {
                             if (!$requestData->isGranted()) {
-                                [$result, $statusCode] = $this->prepareNotGrantedResponse();
+                                [$result, $statusCode] = ResponseHelper::prepareNotGrantedResponse();
                                 break;
                             }
 
@@ -110,12 +106,12 @@ abstract class BaseOutputListener extends BaseListener
                             );
                         } else {
                             if (!$requestData->isGranted()) {
-                                [$result, $statusCode] = $this->prepareNotGrantedResponse();
+                                [$result, $statusCode] = ResponseHelper::prepareNotGrantedResponse();
                                 break;
                             }
 
                             if (!$requestData->isObjectFetched()) {
-                                [$result, $statusCode] = $this->prepareNotFoundResponse();
+                                [$result, $statusCode] = ResponseHelper::prepareNotFoundResponse();
                                 break;
                             }
 
@@ -126,28 +122,26 @@ abstract class BaseOutputListener extends BaseListener
 
 
                         if ($requestData->getOutputDTO() && $requestData->getOutputDTO()->isValid()) {
-                            $result = $requestData->getOutputDTO();
-                            $statusCode = Response::HTTP_OK;
+                            [$result, $statusCode] = ResponseHelper::prepareOKResponse($result);
                             break;
                         }
 
                         break;
                     case Request::METHOD_DELETE:
                         if (!$requestData->isObjectFetched()) {
-                            [$result, $statusCode] = $this->prepareNotFoundResponse();
+                            [$result, $statusCode] = ResponseHelper::prepareNotFoundResponse();
                             break;
                         }
 
                         if (!$requestData->isGranted()) {
-                            [$result, $statusCode] = $this->prepareNotGrantedResponse();
+                            [$result, $statusCode] = ResponseHelper::prepareNotGrantedResponse();
                             break;
                         }
 
-                        $statusCode = Response::HTTP_OK;
+                        [$result, $statusCode] = ResponseHelper::prepareDeleteResponse();
                         break;
                     default:
-                        $statusCode = Response::HTTP_NO_CONTENT;
-                        $result = '';
+                        [$result, $statusCode] = ResponseHelper::prepareNoContentResponse();
                         return;
                 }
             } else {
@@ -159,12 +153,12 @@ abstract class BaseOutputListener extends BaseListener
                     case Request::METHOD_PATCH:
                     case Request::METHOD_DELETE:
                         if (!$requestData->isGranted()) {
-                            [$result, $statusCode] = $this->prepareNotGrantedResponse();
+                            [$result, $statusCode] = ResponseHelper::prepareNotGrantedResponse();
                             break;
                         }
 
                         if (!$requestData->isObjectFetched()) {
-                            [$result, $statusCode] = $this->prepareNotFoundResponse();
+                            [$result, $statusCode] = ResponseHelper::prepareNotFoundResponse();
                             break;
                         }
 
@@ -187,35 +181,13 @@ abstract class BaseOutputListener extends BaseListener
             }
         }
 
-        //
-        $response = (new Response)
-            ->setStatusCode($requestData->getResponseStatusCode() ?? $statusCode);
-
-        if ($result !== null) {
-            $response
-                ->setContent($this->DTOService->serialize($result, $event->getRequest(), $requestData));
-        }
-        if ($newResourceUrl) {
-            $response->headers->set('Location', $newResourceUrl);
-        }
+        $response = ResponseHelper::generateResponse(
+            $result ?? $this->DTOService->serialize($result, $event->getRequest(), $requestData),
+            $requestData->getResponseStatusCode() ?? $statusCode,
+            $newResourceUrl
+        );
 
         $event->setResponse($response);
-    }
-
-    protected function prepareNotGrantedResponse(): array
-    {
-        $result = ['error' => 'Access denied.'];
-        $statusCode = Response::HTTP_FORBIDDEN;
-
-        return [$result, $statusCode];
-    }
-
-    protected function prepareNotFoundResponse(): array
-    {
-        $result = ['error' => 'Object not found.'];
-        $statusCode = Response::HTTP_NOT_FOUND;
-
-        return [$result, $statusCode];
     }
 
     /**
@@ -236,21 +208,7 @@ abstract class BaseOutputListener extends BaseListener
             return null;
         }
 
-        if (!$outputDTO) {
-            if ($resource->getIsCollection()) {
-                if (!$resource->getCollectionOutputDTOClass()) {
-                    throw new \Exception('Missing output DTO class for collection.');
-                }
-
-                $outputDTO = new ($resource->getCollectionOutputDTOClass())();
-            } else {
-                if (!$resource->getOutputDTOClass()) {
-                    throw new \Exception('Missing output DTO class.');
-                }
-
-                $outputDTO = new ($resource->getOutputDTOClass())();
-            }
-        }
+        $outputDTO = OutputHelper::verifyDTO($outputDTO, $resource);
 
         if ($resource->getIsCRUD()) {
             switch ($request->getMethod()) {
@@ -275,7 +233,6 @@ abstract class BaseOutputListener extends BaseListener
                     break;
             }
         }
-
 
         return $outputDTO;
     }
