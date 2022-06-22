@@ -182,7 +182,7 @@ abstract class BaseOutputListener extends BaseListener
         }
 
         $response = ResponseHelper::generateResponse(
-            $result ?? $this->DTOService->serialize($result, $event->getRequest(), $requestData),
+            $result ? $this->DTOService->serialize($result, $event->getRequest(), $requestData) : null ,
             $requestData->getResponseStatusCode() ?? $statusCode,
             $newResourceUrl
         );
