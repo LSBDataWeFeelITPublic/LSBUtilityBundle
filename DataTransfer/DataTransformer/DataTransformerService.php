@@ -6,6 +6,7 @@ namespace LSB\UtilityBundle\DataTransfer\DataTransformer;
 use LSB\UtilityBundle\DataTransfer\Model\Input\InputDTOInterface;
 use LSB\UtilityBundle\DataTransfer\Model\Output\OutputDTOInterface;
 use LSB\UtilityBundle\Manager\BaseManager;
+use LSB\UtilityBundle\Manager\ManagerInterface;
 use LSB\UtilityBundle\ModuleInventory\BaseModuleInventory;
 
 class DataTransformerService
@@ -69,7 +70,7 @@ class DataTransformerService
         ?InputDTOInterface $inputDTO = null,
         ?OutputDTOInterface $outputDTO = null,
         ?object $objectToPopulate = null,
-        ?BaseManager $manager = null
+        ?ManagerInterface $manager = null
     ): array {
         return [
             DataInitializerTransformerInterface::CONTEXT_INPUT_DTO => $inputDTO,

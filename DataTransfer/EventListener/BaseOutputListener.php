@@ -11,7 +11,7 @@ use LSB\UtilityBundle\DataTransfer\Helper\Output\OutputHelper;
 use LSB\UtilityBundle\DataTransfer\Helper\Output\ResponseHelper;
 use LSB\UtilityBundle\DataTransfer\Model\Output\OutputDTOInterface;
 use LSB\UtilityBundle\DataTransfer\Request\RequestAttributes;
-use LSB\UtilityBundle\DataTransfer\Resource\ResourceHelper;
+use LSB\UtilityBundle\DataTransfer\Helper\Resource\ResourceHelper;
 use LSB\UtilityBundle\Service\ApiVersionGrabber;
 use LSB\UtilityBundle\Service\ManagerContainerInterface;
 use Symfony\Component\HttpFoundation\Request;
@@ -122,7 +122,7 @@ abstract class BaseOutputListener extends BaseListener
 
 
                         if ($requestData->getOutputDTO() && $requestData->getOutputDTO()->isValid()) {
-                            [$result, $statusCode] = ResponseHelper::prepareOKResponse($result);
+                            [$result, $statusCode] = ResponseHelper::prepareOKResponse($requestData->getOutputDTO());
                             break;
                         }
 
@@ -182,7 +182,7 @@ abstract class BaseOutputListener extends BaseListener
         }
 
         $response = ResponseHelper::generateResponse(
-            $result ? $this->DTOService->serialize($result, $event->getRequest(), $requestData) : null ,
+            $result ? $this->DTOService->serialize($result, $event->getRequest(), $requestData) : null,
             $requestData->getResponseStatusCode() ?? $statusCode,
             $newResourceUrl
         );

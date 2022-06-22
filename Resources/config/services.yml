@@ -44,23 +44,24 @@ services:
             - '@lsb_utility.manager.container'
             - '@lsb_utility.dto.data_transformer.service'
             - '@security.authorization_checker'
-            - '@knp_paginator'
             - '@lsb_utility.dto.resource.helper'
             - '@request_stack'
             - '@lsb_utility.dto.helper.validator.default'
             - '@lsb_utility.dto.helper.deserializer.jms'
             - '@lsb_utility.dto.helper.serializer.jms'
+            - '@lsb_utility.dto.helper.app'
+            - '@lsb_utility.dto.helper.authorization'
+            - '@lsb_utility.dto.helper.collection'
 
     lsb_utility.dto.service:
         alias: 'LSB\UtilityBundle\DataTransfer\DTOService'
 
-    LSB\UtilityBundle\DataTransfer\Resource\ResourceHelper:
+    LSB\UtilityBundle\DataTransfer\Helper\Resource\ResourceHelper:
         arguments:
             - '@lsb_utility.manager.container'
 
     lsb_utility.dto.resource.helper:
-        alias: 'LSB\UtilityBundle\DataTransfer\Resource\ResourceHelper'
-
+        alias: 'LSB\UtilityBundle\DataTransfer\Helper\Resource\ResourceHelper'
 
     LSB\UtilityBundle\DataTransfer\Resolver\APIRequestResolver:
         arguments:
@@ -136,7 +137,36 @@ services:
         alias: 'LSB\UtilityBundle\DataTransfer\Helper\Serializer\JMSDTOSerializer'
 
     LSB\UtilityBundle\DataTransfer\Helper\Deserializer\DTOSerializerInterface:
-        alias: 'LSB\UtilityBundle\DataTransfer\Helper\Serializer\JMSDTOSserializer'
+        alias: 'LSB\UtilityBundle\DataTransfer\Helper\Serializer\JMSDTOSerializer'
+
+    ####
+    LSB\UtilityBundle\DataTransfer\Helper\App\AppHelper:
+        arguments:
+            - '@request_stack'
+
+    lsb_utility.dto.helper.app:
+        alias: 'LSB\UtilityBundle\DataTransfer\Helper\App\AppHelper'
+
+    ####
+    LSB\UtilityBundle\DataTransfer\Helper\Collection\CollectionHelper:
+        arguments:
+            - '@security.authorization_checker'
+            - '@knp_paginator'
+            - '@lsb_utility.manager.container'
+            - '@lsb_utility.dto.helper.app'
+
+    lsb_utility.dto.helper.collection:
+        alias: 'LSB\UtilityBundle\DataTransfer\Helper\Collection\CollectionHelper'
+
+    ####
+    LSB\UtilityBundle\DataTransfer\Helper\Authorization\AuthorizationHelper:
+        arguments:
+            - '@security.authorization_checker'
+            - '@lsb_utility.manager.container'
+            - '@lsb_utility.dto.helper.app'
+
+    lsb_utility.dto.helper.authorization:
+        alias: 'LSB\UtilityBundle\DataTransfer\Helper\Authorization\AuthorizationHelper'
 
     ### Validator
 

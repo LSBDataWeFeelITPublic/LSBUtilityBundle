@@ -1,9 +1,9 @@
 <?php
 
-namespace LSB\UtilityBundle\DataTransfer\Resource;
+namespace LSB\UtilityBundle\DataTransfer\Helper\Resource;
 
-use App\DataTransfer\DTO\Output\Utility\BaseSlidingPaginationOutputDTO;
 use LSB\UtilityBundle\Attribute\Resource;
+use LSB\UtilityBundle\DataTransfer\Model\Output\BaseCollectionOutputDTO;
 use LSB\UtilityBundle\Manager\ManagerInterface;
 use LSB\UtilityBundle\Service\ManagerContainerInterface;
 use ReflectionClass;
@@ -12,7 +12,9 @@ use Symfony\Component\HttpFoundation\Request;
 
 class ResourceHelper
 {
-    public function __construct(protected ManagerContainerInterface $managerContainer){}
+    public function __construct(protected ManagerContainerInterface $managerContainer)
+    {
+    }
 
     /**
      * @param Request $request
@@ -215,7 +217,7 @@ class ResourceHelper
         }
 
         if (!$resource->getCollectionOutputDTOClass()) {
-            $resource->setCollectionOutputDTOClass(BaseSlidingPaginationOutputDTO::class);
+            $resource->setCollectionOutputDTOClass(BaseCollectionOutputDTO::class);
         }
 
         if (!$resource->getSerializationType()) {
@@ -228,4 +230,114 @@ class ResourceHelper
 
         return $resource;
     }
+
+    /**
+     * @param \ReflectionProperty $reflectionProperty
+     * @param bool $updateWithDefaults
+     * @param \LSB\UtilityBundle\Attribute\Resource|null $LSResource
+     * @return \LSB\UtilityBundle\Attribute\Resource|null
+     */
+    public function getResourceByProperty(
+        \ReflectionProperty $reflectionProperty,
+        bool                $updateWithDefaults = false,
+        ?Resource           $LSResource = null
+    ): ?Resource {
+        $propertyAttributes = $reflectionProperty->getAttributes(Resource::class);
+        $resource = null;
+
+        /**
+         * @var Resource|null $resource
+         */
+        foreach ($propertyAttributes as $entityAttribute) {
+            if ($entityAttribute->getName() !== Resource::class) {
+                continue;
+            }
+            $resource = $entityAttribute->newInstance();
+        }
+
+        if (!$resource && $reflectionProperty->getType()) {
+            $resource = new Resource(
+                outputDTOClass: $reflectionProperty->getType()->getName()
+            );
+        }
+
+        if ($resource && $LSResource) {
+            $resource = $this->mergeResource($LSResource, $resource);
+        } elseif (!$resource && $LSResource) {
+            $resource = $LSResource;
+        }
+
+        if ($resource && $updateWithDefaults) {
+            $this->updateResourceConfigurationWithDefaults($resource);
+        }
+
+        return $resource;
+    }
+
+    public function getItemResource(string $class, ?\ReflectionProperty $reflectionProperty = null, bool $updateConfiguration = false): ?Resource
+    {
+        $itemResource = null;
+
+        if ($reflectionProperty) {
+            $itemResource = $this->getResourceByProperty(
+                reflectionProperty: $reflectionProperty,
+                updateWithDefaults: true,
+                LSResource: $itemResource
+            );
+        }
+
+
+        return $itemResource;
+    }
+
+    /**
+     * @throws \Exception
+     */
+    public function getCollectionItemResource(
+        ?Resource            $masterResource = null,
+        ?\ReflectionProperty $reflectionProperty = null,
+        bool                 $updateConfiguration = false
+    ): ?Resource {
+        $propertyAttributes = $reflectionProperty->getAttributes(Resource::class);
+        $resource = null;
+
+        /**
+         * @var Resource|null $resource
+         */
+        foreach ($propertyAttributes as $entityAttribute) {
+            if ($entityAttribute->getName() !== Resource::class) {
+                continue;
+            }
+            $resource = $entityAttribute->newInstance();
+        }
+
+        if (!$resource && $masterResource) {
+            $resource = new Resource(
+                outputDTOClass: $masterResource->getCollectionItemOutputDTOClass(),
+                serializationType: $masterResource->getCollectionItemSerializationType()
+            );
+        } elseif ($resource) {
+            $resource
+                ->setOutputDTOClass($resource->getCollectionItemOutputDTOClass())
+                ->setSerializationType($resource->getCollectionItemSerializationType());
+        }
+
+
+        if ($resource && $masterResource) {
+            $resource = $this->mergeResource($masterResource, $resource);
+        } elseif (!$resource && $masterResource) {
+            $resource = $masterResource;
+        }
+
+        if ($resource && $updateConfiguration) {
+            $this->updateResourceConfigurationWithDefaults($resource);
+        }
+
+        if (!$resource instanceof Resource) {
+            throw new \Exception(sprintf("Collection Resource is missing. Please add Resource attribute to %s. .", $reflectionProperty->getName()));
+        }
+
+        return $resource;
+    }
+
 }

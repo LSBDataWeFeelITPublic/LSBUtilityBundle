@@ -3,36 +3,20 @@ declare(strict_types=1);
 
 namespace LSB\UtilityBundle\DataTransfer\EventListener;
 
-use Doctrine\Common\Collections\ArrayCollection;
-use JMS\Serializer\DeserializationContext;
-use JMS\Serializer\Exception\RuntimeException;
 use JMS\Serializer\SerializerInterface;
 use LSB\UtilityBundle\Attribute\Resource;
 use LSB\UtilityBundle\DataTransfer\DataTransformer\DataTransformerService;
 use LSB\UtilityBundle\DataTransfer\DTOService;
 use LSB\UtilityBundle\DataTransfer\Model\Input\InputDTOInterface;
 use LSB\UtilityBundle\DataTransfer\Request\RequestAttributes;
-use LSB\UtilityBundle\DataTransfer\Resource\ResourceHelper;
+use LSB\UtilityBundle\DataTransfer\Helper\Resource\ResourceHelper;
 use LSB\UtilityBundle\Manager\ManagerInterface;
 use LSB\UtilityBundle\Security\BaseObjectVoter;
-use LSB\UtilityBundle\Serializer\ObjectConstructor\ExistingObjectConstructor;
 use LSB\UtilityBundle\Service\ApiVersionGrabber;
 use LSB\UtilityBundle\Service\ManagerContainerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
-use Symfony\Component\PropertyAccess\PropertyAccessor;
-use Symfony\Component\PropertyInfo\Extractor\ReflectionExtractor;
 use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
-use Symfony\Component\Serializer\Encoder\JsonEncoder;
-use Symfony\Component\Serializer\Encoder\XmlEncoder;
-use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
-use Symfony\Component\Serializer\Normalizer\ArrayDenormalizer;
-use Symfony\Component\Serializer\Normalizer\DateTimeNormalizer;
-use Symfony\Component\Serializer\Normalizer\GetSetMethodNormalizer;
-use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
-use Symfony\Component\Serializer\Serializer;
-use Symfony\Component\Validator\ConstraintViolation;
-use Symfony\Component\Validator\ConstraintViolationList;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 abstract class BaseInputListener extends BaseListener
@@ -308,7 +292,7 @@ abstract class BaseInputListener extends BaseListener
             throw new \Exception('Input Create DTO Class is missing.');
         }
 
-        $this->DTOService->deserialize($request, $resource, $dto);
+        $dto = $this->DTOService->deserialize($request, $resource, $dto);
 
         //Walidacja musi sie odbyc po podpieciu obiektow encji
         $this->DTOService->validate($dto);
